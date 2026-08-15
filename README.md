@@ -37,7 +37,7 @@
 
 ```text
 帮我安装这个 skill，这是它的 GitHub 链接：
-https://github.com/zhangguiyun/ryan-wechat-publisher
+https://github.com/RyanChen1997/ryan-wechat-publisher
 ```
 
 ---
