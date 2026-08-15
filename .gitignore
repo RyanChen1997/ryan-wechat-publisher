@@ -1,0 +1,30 @@
+# 依赖
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 环境变量 / 密钥（防止误提交）
+.env
+.env.*
+!.env.example
+
+# pi 代理的 skill 运行时安装副本（项目根目录才是源）
+.pi/
+
+# 发布运行时产物（一般生成在 /tmp 工作目录，此处兜底）
+images-uploaded.json
+draft-result.json
+final-content.html
+template-raw.html
+template-content.html
+fetch-result.json
+09-publish/
+
+# 日志
+*.log
