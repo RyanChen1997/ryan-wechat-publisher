@@ -31,9 +31,9 @@ const STYLES = {
 
   strong: 'font-weight: bold; color: rgb(55, 84, 116);',
 
-  code: 'background-color: rgb(245, 245, 245); padding: 2px 6px; border-radius: 3px; font-size: 14px; font-family: Consolas, Monaco, monospace; color: rgb(45, 113, 214);',
+  code: 'background-color: var(--weui-BG-3, rgb(245, 245, 245)); padding: 2px 6px; border-radius: 3px; font-size: 14px; font-family: Consolas, Monaco, monospace; color: rgb(45, 113, 214);',
 
-  quote_outer: 'border-left: 3px solid rgb(45, 113, 214); padding: 12px 20px; margin: 20px 0; background-color: rgb(242, 247, 253);',
+  quote_outer: 'border-left: 3px solid rgb(45, 113, 214); padding: 12px 20px; margin: 20px 0; background-color: var(--weui-BG-2, rgb(242, 247, 253));',
   quote_text: 'color: rgb(80, 80, 80); font-size: 15px; line-height: 1.6;',
 
   ul_outer: 'margin: 16px 0;',
@@ -50,7 +50,7 @@ const STYLES = {
   hr_section: 'text-align: center; margin: 28px 0;',
   hr_line: 'display: inline-block; width: 40%; height: 1px; background: rgb(220, 220, 220);',
 
-  code_block: 'margin: 16px 0; background: rgb(245, 245, 245); padding: 16px; border-radius: 4px; overflow-x: auto;',
+  code_block: 'margin: 16px 0; background: var(--weui-BG-3, rgb(245, 245, 245)); padding: 16px; border-radius: 4px; overflow-x: auto;',
   code_pre: 'margin: 0; font-size: 13px; font-family: Consolas, Monaco, monospace; color: rgb(60, 60, 60); white-space: pre-wrap; word-break: break-all; line-height: 1.5;',
 };
 
@@ -157,6 +157,7 @@ module.exports = {
     accentColor: '#fee2b9',
     bgColor: '#ffffff',
     textColor: 'rgb(0, 0, 0)',
+    darkMode: 'weui-var', // 页面透明（夜间自动原生黑底）；引用 --weui-BG-2，代码 --weui-BG-3；蓝色强调色保留
   },
   STYLES,
   decorations,

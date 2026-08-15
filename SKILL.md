@@ -94,6 +94,7 @@ description: 微信公众号文章一条龙工作流 — 从原始文章（Markd
 - 不用黑名单 CSS：`position: fixed/sticky`, `float`, `z-index`, `filter` 等（relative/absolute 尽量少用，优先 flex 布局）
 - **装饰图形一律转 PNG**：SVG 只作为设计源文件，输出到 HTML 必须是 PNG 图片（走图片上传流水线），公众号不支持 inline SVG 和 base64 SVG
 - **列表一律用 section + 内联符号**：不要用 `<ul>/<ol>/<li>`，公众号会强制显示默认列表符号导致样式错乱
+- **夜间模式友好**：浅色背景一律写成微信 CSS 变量 `var(--weui-BG-1/2/3, <白天色>)` 形式（fallback 为白天色，本地预览不变），不用半透明白背景；高饱和强调色保留。夜间由微信 mp-darkmode 算法统一映射，深浅不一的灰阶马赛克是“浅色块过多”的信号。规则详见 `references/style-presets.md`「深色模式适配规范」
 - 正文从 `#` 一级标题开始，不额外加"文章总标题"层（草稿 title 取第一个 `#` 文本）
 - 需要用户确认的步骤（第 2、4、7 步），等用户明确答复后才继续
 
@@ -103,9 +104,10 @@ description: 微信公众号文章一条龙工作流 — 从原始文章（Markd
 |------|------|------|
 | 工作流 | `references/workflow-detail.md` | 9 步工作流详细操作指南 |
 | 复刻 | `references/clone-guide.md` | 复刻排版完整指南（6 步流程 + 四级门禁 + 模式速查） |
-| 预设 | `references/style-presets.md` | 内置预设风格详细说明 |
+| 预设 | `references/style-presets.md` | 内置预设风格详细说明（含夜间模式适配规范） |
 | 排错 | `references/troubleshooting.md` | 常见问题、错误码、避坑要点 |
-| 渲染 | `scripts/render.js` | 渲染入口：md + preset → HTML |
+| 渲染 | `scripts/render.js` | 渲染入口：md + preset → HTML（支持 `--output-dark-preview` 夜间预览） |
+| 夜间模拟 | `scripts/utils/dark-preview.js` | 按微信 mp-darkmode 算法生成夜间模式预览 |
 | 引擎 | `scripts/presets/base.js` | 渲染引擎公共骨架 |
 | 校验 | `scripts/compare_visible_text.py` | 内容一致性校验 |
 | 校验 | `scripts/validate_wechat_html.py` | 微信兼容校验 |

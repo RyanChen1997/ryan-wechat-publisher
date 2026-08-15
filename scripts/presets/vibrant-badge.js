@@ -17,7 +17,9 @@ const MAGNIFIER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 
 const decoAssets = new DecoAssetManager(PRESET_DIR);
 
 const STYLES = {
-  outer: 'background-color: rgb(245, 245, 245); padding: 20px 0; box-sizing: border-box; font-size: 15px; color: #333333; line-height: 1.75;',
+  // 夜间模式说明：页面底色/卡片/代码背景改用微信 CSS 变量（--weui-BG-1 页面 / --weui-BG-2 卡片 / --weui-BG-3 代码），
+  // fallback 为白天色；夜间微信自动换成原生深色（#1E1E1E / #191919 / #404040），避免浅色块被反色成中灰马赛克。蓝橙强调色保留。
+  outer: 'background-color: var(--weui-BG-1, rgb(245, 245, 245)); padding: 20px 0; box-sizing: border-box; font-size: 15px; color: #333333; line-height: 1.75;',
 
   h1_container: 'margin: 30px auto 20px; display: flex; justify-content: center; align-items: center;',
   h1_inner: 'display: flex; flex-direction: column; align-items: flex-start;',
@@ -33,7 +35,7 @@ const STYLES = {
   card_outer: 'width: 92%; margin: 0 auto 20px; box-sizing: border-box; display: flex;',
   card_left_deco: 'flex-shrink: 0; display: flex; flex-direction: column; justify-content: space-around; width: 28px; margin-right: -14px; position: relative; padding: 15px 0;',
   card_spiral_img: 'display: block; width: 28px; height: auto;',
-  card_body: 'flex: 1; background-color: #ffffff; border-radius: 10px; box-sizing: border-box; padding: 16px 20px 16px 30px;',
+  card_body: 'flex: 1; background-color: var(--weui-BG-2, #ffffff); border-radius: 10px; box-sizing: border-box; padding: 16px 20px 16px 30px;',
 
   h2: 'font-size: 15px; font-weight: bold; color: #1266be; margin: 16px 0 10px; line-height: 2;',
 
@@ -45,9 +47,9 @@ const STYLES = {
 
   strong: 'color: #1266be; font-weight: bold;',
 
-  code: 'background-color: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-size: 14px; font-family: Consolas, Monaco, monospace; color: #e36c09;',
+  code: 'background-color: var(--weui-BG-3, #f5f5f5); padding: 2px 6px; border-radius: 3px; font-size: 14px; font-family: Consolas, Monaco, monospace; color: #e36c09;',
 
-  quote_outer: 'border-left: 4px solid #1266be; padding: 12px 20px; margin: 14px 0; background-color: #f0f6fc; border-radius: 0 8px 8px 0;',
+  quote_outer: 'border-left: 4px solid #1266be; padding: 12px 20px; margin: 14px 0; background-color: var(--weui-BG-2, #f0f6fc); border-radius: 0 8px 8px 0;',
   quote_text: 'color: #555; font-size: 14px; line-height: 1.8; letter-spacing: 1px;',
 
   ul_outer: 'margin: 14px 0;',
@@ -64,7 +66,7 @@ const STYLES = {
   hr_section: 'text-align: center; margin: 24px 0;',
   hr_line: 'display: inline-block; width: 30%; height: 2px; background: linear-gradient(to right, transparent, #1266be, transparent);',
 
-  code_block: 'margin: 14px 0; background: #f5f5f5; padding: 14px; border-radius: 6px; overflow-x: auto;',
+  code_block: 'margin: 14px 0; background: var(--weui-BG-3, #f5f5f5); padding: 14px; border-radius: 6px; overflow-x: auto;',
   code_pre: 'margin: 0; font-size: 13px; font-family: Consolas, Monaco, monospace; color: #444; white-space: pre-wrap; word-break: break-all; line-height: 1.6;',
 };
 
@@ -226,6 +228,7 @@ module.exports = {
     accentColor: '#e36c09',
     bgColor: '#f5f5f5',
     textColor: '#333333',
+    darkMode: 'weui-var', // 页面底色 --weui-BG-1，卡片/引用 --weui-BG-2，代码 --weui-BG-3；蓝橙强调色保留
   },
   STYLES,
   decorations,

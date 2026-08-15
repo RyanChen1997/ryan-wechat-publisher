@@ -32,10 +32,10 @@ const STYLES = {
   strong_span: 'box-sizing: border-box;',
 
   // 行内代码
-  code: 'background-color: rgb(245, 245, 245); padding: 2px 6px; border-radius: 3px; font-size: 14px; font-family: Consolas, Monaco, monospace; color: rgb(180, 80, 40);',
+  code: 'background-color: var(--weui-BG-3, rgb(245, 245, 245)); padding: 2px 6px; border-radius: 3px; font-size: 14px; font-family: Consolas, Monaco, monospace; color: rgb(180, 80, 40);',
 
   // 引用块
-  quote_outer: 'border-left: 3px solid rgb(2, 183, 237); padding: 12px 20px; margin: 20px 0; background-color: rgb(248, 252, 255);',
+  quote_outer: 'border-left: 3px solid rgb(2, 183, 237); padding: 12px 20px; margin: 20px 0; background-color: var(--weui-BG-2, rgb(248, 252, 255));',
   quote_p: 'margin: 0; color: rgb(80, 80, 80); font-size: 14px; line-height: 1.8;',
   quote_text: 'color: rgb(80, 80, 80); font-size: 14px; line-height: 1.8;',
 
@@ -60,7 +60,7 @@ const STYLES = {
   hr: 'border: none; height: 1px; background-color: rgb(220, 220, 220); margin: 30px 0;',
 
   // 代码块
-  code_block: 'margin: 16px 0; background: rgb(245, 245, 245); padding: 16px; border-radius: 4px; overflow-x: auto;',
+  code_block: 'margin: 16px 0; background: var(--weui-BG-3, rgb(245, 245, 245)); padding: 16px; border-radius: 4px; overflow-x: auto;',
   code_pre: 'margin: 0; font-size: 13px; font-family: Consolas, Monaco, monospace; color: rgb(60, 60, 60); white-space: pre-wrap; word-break: break-all; line-height: 1.5;',
 };
 
@@ -134,6 +134,7 @@ module.exports = {
     primaryColor: 'rgb(2, 183, 237)',
     bgColor: '#ffffff',
     textColor: 'rgb(62, 62, 62)',
+    darkMode: 'weui-var', // 页面透明（夜间自动原生黑底）；引用 --weui-BG-2，代码 --weui-BG-3；青色点缀保留
   },
   STYLES,
   decorations,

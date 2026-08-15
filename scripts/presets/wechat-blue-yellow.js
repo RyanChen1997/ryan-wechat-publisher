@@ -1,13 +1,15 @@
 const STYLES = {
-  outer: 'background-color: rgb(247, 249, 252); box-sizing: border-box; font-style: normal; font-weight: 400; text-align: justify; font-size: 15px; line-height: 2; color: rgb(62, 62, 62); letter-spacing: 0.3px; padding: 24px 0 32px;',
+  // 夜间模式说明：页面底色/色块用微信 CSS 变量（--weui-BG-1 页面 / --weui-BG-2 卡片 / --weui-BG-3 代码），
+  // fallback 为白天色（本地预览可见）；夜间微信自动换成原生深色（#1E1E1E / #191919 / #404040），避免 mp-darkmode 反色算法把浅色块映射成深浅不一的中灰马赛克。
+  outer: 'background-color: var(--weui-BG-1, rgb(247, 249, 252)); box-sizing: border-box; font-style: normal; font-weight: 400; text-align: justify; font-size: 15px; line-height: 2; color: rgb(62, 62, 62); letter-spacing: 0.3px; padding: 24px 0 32px;',
 
   // 顶部引言区：虚线框（对应模板文章头部的虚线框）
-  intro_box: 'width: 94%; margin: 0 auto 20px; padding: 18px 20px 8px; box-sizing: border-box; border-style: dashed; border-width: 1px; border-color: rgb(0, 95, 199); background-color: rgba(255, 255, 255, 0.45);',
+  intro_box: 'width: 94%; margin: 0 auto 20px; padding: 18px 20px 8px; box-sizing: border-box; border-style: dashed; border-width: 1px; border-color: rgb(0, 95, 199); background-color: var(--weui-BG-2, rgba(255, 255, 255, 0.45));',
 
   // 章节容器框型（对应模板中不同章节的不同框）
-  box_white: 'width: 94%; margin: 0 auto 22px; padding: 20px 18px 12px; box-sizing: border-box; background-color: rgb(255, 255, 255); border-style: solid; border-width: 1px; border-color: rgb(0, 95, 199);',
-  box_glass: 'width: 94%; margin: 0 auto 22px; padding: 20px 18px 12px; box-sizing: border-box; background-color: rgba(255, 255, 255, 0.2); border-style: solid; border-width: 1px; border-color: rgb(0, 95, 199);',
-  box_tail: 'width: 94%; margin: 0 auto 22px; padding: 20px 18px 10px; box-sizing: border-box; background-color: rgb(247, 251, 255); border-radius: 8px;',
+  box_white: 'width: 94%; margin: 0 auto 22px; padding: 20px 18px 12px; box-sizing: border-box; background-color: var(--weui-BG-2, rgb(255, 255, 255)); border-style: solid; border-width: 1px; border-color: rgb(0, 95, 199);',
+  box_glass: 'width: 94%; margin: 0 auto 22px; padding: 20px 18px 12px; box-sizing: border-box; background-color: var(--weui-BG-2, rgba(255, 255, 255, 0.2)); border-style: solid; border-width: 1px; border-color: rgb(0, 95, 199);',
+  box_tail: 'width: 94%; margin: 0 auto 22px; padding: 20px 18px 10px; box-sizing: border-box; background-color: var(--weui-BG-2, rgb(247, 251, 255)); border-radius: 8px;',
   box_plain: 'width: 94%; margin: 0 auto 22px; padding: 0 18px; box-sizing: border-box;',
 
   // 章节标题：深蓝色块 + 白字 + 右侧黄色边条（所有章节统一，居中）
@@ -18,7 +20,7 @@ const STYLES = {
   // 参考资料标题（无框章节）
   ref_title: 'font-size: 16px; font-weight: bold; color: rgb(0, 95, 199); margin: 0 0 10px;',
 
-  h3: 'font-size: 17px; line-height: 1.6; font-weight: bold; color: rgb(0, 95, 199); margin: 20px 0 10px; padding: 3px 10px; border-left: 4px solid rgb(251, 197, 24); background-color: rgb(231, 244, 255); box-sizing: border-box;',
+  h3: 'font-size: 17px; line-height: 1.6; font-weight: bold; color: rgb(0, 95, 199); margin: 20px 0 10px; padding: 3px 10px; border-left: 4px solid rgb(251, 197, 24); background-color: var(--weui-BG-2, rgb(231, 244, 255)); box-sizing: border-box;',
 
   p_section: 'box-sizing: border-box; margin: 0 0 10px; padding: 0;',
   p: 'text-indent: 2em; white-space: normal; margin: 0; padding: 0; box-sizing: border-box; font-size: 15px; line-height: 2; text-align: justify; color: rgb(62, 62, 62);',
@@ -30,13 +32,13 @@ const STYLES = {
 
   strong: 'color: rgb(0, 95, 199); font-weight: bold;',
   strong_span: 'box-sizing: border-box;',
-  code: 'background-color: rgb(231, 244, 255); padding: 2px 6px; border-radius: 2px; font-size: 14px; font-family: Consolas, Monaco, monospace; color: rgb(0, 95, 199);',
+  code: 'background-color: var(--weui-BG-3, rgb(231, 244, 255)); padding: 2px 6px; border-radius: 2px; font-size: 14px; font-family: Consolas, Monaco, monospace; color: rgb(0, 95, 199);',
 
-  quote_outer: 'border-left: 3px solid rgb(0, 95, 199); padding: 12px 16px; margin: 14px 0; background-color: rgb(247, 251, 255); box-sizing: border-box;',
+  quote_outer: 'border-left: 3px solid rgb(0, 95, 199); padding: 12px 16px; margin: 14px 0; background-color: var(--weui-BG-2, rgb(247, 251, 255)); box-sizing: border-box;',
   quote_p: 'margin: 0; padding: 0; color: rgb(62, 62, 62); font-size: 14px; line-height: 1.9; text-align: justify;',
   quote_text: 'color: rgb(62, 62, 62); font-size: 14px; line-height: 1.9;',
 
-  ul_outer: 'margin: 10px 0 14px; padding: 8px 12px; background-color: rgb(247, 251, 255); box-sizing: border-box;',
+  ul_outer: 'margin: 10px 0 14px; padding: 8px 12px; background-color: var(--weui-BG-2, rgb(247, 251, 255)); box-sizing: border-box;',
   li: 'margin: 4px 0; line-height: 2; font-size: 15px; text-align: justify;',
   li_bullet_text: 'margin-right: 8px; color: rgb(251, 197, 24); font-weight: bold;',
   li_bullet_char: '▪',
@@ -50,7 +52,7 @@ const STYLES = {
   hr_section: 'text-align: center; margin: 24px 0; box-sizing: border-box;',
   hr_line: 'display: inline-block; width: 40%; height: 1px; background-color: rgb(0, 95, 199);',
 
-  code_block: 'margin: 16px 0; background-color: rgb(247, 251, 255); border: 1px solid rgb(188, 220, 248); padding: 14px; border-radius: 0; overflow-x: auto; box-sizing: border-box;',
+  code_block: 'margin: 16px 0; background-color: var(--weui-BG-3, rgb(247, 251, 255)); border: 1px solid rgb(188, 220, 248); padding: 14px; border-radius: 0; overflow-x: auto; box-sizing: border-box;',
   code_pre: 'margin: 0; font-size: 13px; font-family: Consolas, Monaco, monospace; color: rgb(62, 62, 62); white-space: pre-wrap; word-break: break-word; line-height: 1.6;',
 };
 
@@ -161,6 +163,7 @@ module.exports = {
     accentColor: 'rgb(251, 197, 24)',
     bgColor: 'rgb(247, 249, 252)',
     textColor: 'rgb(62, 62, 62)',
+    darkMode: 'weui-var', // 页面底色 --weui-BG-1，卡片/引用/列表 --weui-BG-2，代码 --weui-BG-3；蓝黄强调色保留
   },
   STYLES,
   decorations,

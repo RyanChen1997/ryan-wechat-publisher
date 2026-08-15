@@ -150,6 +150,7 @@ node scripts/render.js \
   --heading-offset <偏移量> \
   --output-body 04-html/article-body.html \
   --output-preview 04-html/article-preview.html \
+  --output-dark-preview 04-html/article-dark-preview.html \
   --title "文章标题" \
   --asset-dir 02-structured/
 ```
@@ -157,6 +158,7 @@ node scripts/render.js \
 **输出**：
 - `04-html/article-body.html` — 发布版（图片用 `data-src`，微信懒加载规范）
 - `04-html/article-preview.html` — 预览版（完整 HTML 文档，图片用本地路径 `src`）
+- `04-html/article-dark-preview.html` — 夜间预览版（按微信 mp-darkmode 算法模拟夜间映射）
 
 ---
 
@@ -213,11 +215,18 @@ python3 scripts/check_images.py \
 
 ```bash
 open 04-html/article-preview.html
+open 04-html/article-dark-preview.html   # 夜间模式预览（模拟微信 mp-darkmode 算法）
 ```
 
-在用户默认浏览器打开预览。
+在用户默认浏览器打开预览。渲染时生成夜间预览：
 
-**必须等待用户明确说"可以/确认/发吧"才能继续。**
+```bash
+node scripts/render.js --md 02-structured/structured.md --preset <预设ID> \
+  --output-preview 04-html/article-preview.html \
+  --output-dark-preview 04-html/article-dark-preview.html
+```
+
+**必须确认白天和夜间两个预览都打开检查**（尤其引用块、代码块、色块多的文章），用户明确说"可以/确认/发吧"后才能继续。
 
 如果用户要求修改：
 - 小调整（改颜色、字号、间距等）→ 修改 preset 样式 → 回到第 5 步重新生成

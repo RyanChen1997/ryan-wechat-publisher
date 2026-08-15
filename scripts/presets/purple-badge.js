@@ -23,11 +23,12 @@ const STYLES = {
   // 加粗
   strong_span: 'font-weight: bold; color: rgb(47, 47, 47);',
 
-  // 行内代码
-  code: 'background-color: rgb(245, 245, 245); padding: 2px 6px; border-radius: 3px; font-size: 14px; font-family: Consolas, Monaco, monospace; color: rgb(105, 130, 250); letter-spacing: 0;',
+  // 夜间模式说明：引用/代码背景改用微信 CSS 变量 --weui-BG-2（卡片）/ --weui-BG-3（代码），
+  // fallback 为白天色；夜间自动变原生深色（#191919 / #404040），避免浅色块被反色成中灰马赛克。蓝紫强调色保留。
+  code: 'background-color: var(--weui-BG-3, rgb(245, 245, 245)); padding: 2px 6px; border-radius: 3px; font-size: 14px; font-family: Consolas, Monaco, monospace; color: rgb(105, 130, 250); letter-spacing: 0;',
 
   // 引用块
-  quote_outer: 'margin-left: 8px; margin-right: 8px; margin-bottom: 24px; padding: 16px 20px; border-left: 4px solid rgb(105, 130, 250); background-color: rgb(245, 247, 255); line-height: 1.6em;',
+  quote_outer: 'margin-left: 8px; margin-right: 8px; margin-bottom: 24px; padding: 16px 20px; border-left: 4px solid rgb(105, 130, 250); background-color: var(--weui-BG-2, rgb(245, 247, 255)); line-height: 1.6em;',
   quote_span: 'color: rgb(60, 60, 60); font-size: 15px; letter-spacing: 1px;',
 
   // 列表
@@ -51,7 +52,7 @@ const STYLES = {
   hr_line: 'display: inline-block; width: 40%; height: 1px; background-color: rgb(200, 200, 200);',
 
   // 代码块
-  code_block: 'margin-left: 8px; margin-right: 8px; margin-bottom: 24px; background: rgb(245, 245, 245); padding: 16px; border-radius: 8px;',
+  code_block: 'margin-left: 8px; margin-right: 8px; margin-bottom: 24px; background: var(--weui-BG-3, rgb(245, 245, 245)); padding: 16px; border-radius: 8px;',
   code_pre: 'margin: 0; font-size: 14px; font-family: Consolas, Monaco, monospace; color: rgb(60, 60, 60); white-space: pre-wrap; word-break: break-all; line-height: 1.6;',
 
   // 空行间距（段落用 margin-bottom，空行不额外生成）
@@ -150,6 +151,7 @@ module.exports = {
     primaryColor: 'rgb(105, 130, 250)',
     bgColor: '#ffffff',
     textColor: 'rgb(47, 47, 47)',
+    darkMode: 'weui-var', // 引用 --weui-BG-2，代码 --weui-BG-3；页面透明（夜间自动原生黑底）；蓝紫强调色保留
   },
   STYLES,
   decorations,

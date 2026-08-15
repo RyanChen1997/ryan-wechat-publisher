@@ -1,5 +1,7 @@
 const STYLES = {
-  outer: '-webkit-tap-highlight-color: rgba(0, 0, 0, 0); margin: 0px; padding: 0px; outline: 0px; max-width: 100%; box-sizing: border-box; overflow-wrap: break-word; color: rgba(0, 0, 0, 0.9); font-family: "PingFang SC NEW", system-ui, -apple-system, "system-ui", "Helvetica Neue", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", Arial, sans-serif; font-size: 15px; font-style: normal; font-weight: 400; letter-spacing: 0.544px; orphans: 2; text-align: justify; text-indent: 0px; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; background-color: rgb(255, 255, 255);',
+  // 夜间模式说明：页面/引用/代码背景改用微信 CSS 变量（--weui-BG-2 页面与卡片 / --weui-BG-3 代码），
+  // fallback 为白天色；夜间自动变原生深色（#191919 / #404040），避免浅色块被反色成中灰马赛克。文字色保留（夜间由微信算法反白）。
+  outer: '-webkit-tap-highlight-color: rgba(0, 0, 0, 0); margin: 0px; padding: 0px; outline: 0px; max-width: 100%; box-sizing: border-box; overflow-wrap: break-word; color: rgba(0, 0, 0, 0.9); font-family: "PingFang SC NEW", system-ui, -apple-system, "system-ui", "Helvetica Neue", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", Arial, sans-serif; font-size: 15px; font-style: normal; font-weight: 400; letter-spacing: 0.544px; orphans: 2; text-align: justify; text-indent: 0px; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; background-color: var(--weui-BG-2, rgb(255, 255, 255));',
 
   h1_decoration_outer: 'margin: 28px 0 8px; box-sizing: border-box; text-align: center;',
   h1_decoration: 'font-size: 17px; color: rgba(0, 0, 0, 0.9); margin: 0; padding: 0;',
@@ -16,9 +18,9 @@ const STYLES = {
 
   strong: 'color: rgba(0, 0, 0, 0.9); font-weight: bold;',
 
-  code: 'background-color: rgb(245, 245, 245); padding: 2px 6px; border-radius: 3px; font-size: 14px; font-family: Consolas, Monaco, monospace; color: rgb(180, 80, 40);',
+  code: 'background-color: var(--weui-BG-3, rgb(245, 245, 245)); padding: 2px 6px; border-radius: 3px; font-size: 14px; font-family: Consolas, Monaco, monospace; color: rgb(180, 80, 40);',
 
-  quote_outer: 'border-left: 2px solid rgb(61, 170, 214); padding: 12px 20px; margin: 20px 8px; background-color: rgb(248, 252, 255);',
+  quote_outer: 'border-left: 2px solid rgb(61, 170, 214); padding: 12px 20px; margin: 20px 8px; background-color: var(--weui-BG-2, rgb(248, 252, 255));',
   quote_text: 'color: rgb(102, 102, 102); font-size: 14px; line-height: 1.8;',
 
   ul_outer: 'margin: 16px 8px;',
@@ -35,7 +37,7 @@ const STYLES = {
   hr_section: 'text-align: center; margin: 30px 0;',
   hr_line: 'display: inline-block; width: 30px; height: 1px; background-color: rgb(200, 200, 200);',
 
-  code_block: 'margin: 16px 8px; background: rgb(245, 245, 245); padding: 16px; border-radius: 4px; overflow-x: auto;',
+  code_block: 'margin: 16px 8px; background: var(--weui-BG-3, rgb(245, 245, 245)); padding: 16px; border-radius: 4px; overflow-x: auto;',
   code_pre: 'margin: 0; font-size: 13px; font-family: Consolas, Monaco, monospace; color: rgb(80, 80, 80); white-space: pre-wrap; word-break: break-all; line-height: 1.6;',
 };
 
@@ -134,6 +136,7 @@ module.exports = {
     accentColor: 'rgb(61, 170, 214)',
     bgColor: '#ffffff',
     textColor: 'rgb(102, 102, 102)',
+    darkMode: 'weui-var', // 页面 --weui-BG-2，引用 --weui-BG-2，代码 --weui-BG-3；文字色夜间由微信算法反白
   },
   STYLES,
   decorations,

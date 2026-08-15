@@ -112,6 +112,7 @@ const src = decoAssets.get(DECO_SVG, 'deco-name', 200); // 200 = 输出宽度(px
 | 段落间距 | `margin-bottom` 数值接近，或空行法/margin 法匹配 |
 | 圆角大小 | `border-radius` 数值接近 |
 | 公众号规范 | 全部内联样式，无 class/style 标签，图片用 data-src |
+| 夜间模式 | 浅色块全部用 `var(--weui-BG-1/2/3, <白天色>)`，无半透明白背景；用 `--output-dark-preview` 检查夜间无马赛克（规则见 `style-presets.md`） |
 
 ### L4：边界测试
 
@@ -119,6 +120,7 @@ const src = decoAssets.get(DECO_SVG, 'deco-name', 200); // 200 = 输出宽度(px
 - 长文本测试：超长文字段落换行、对齐是否正常
 - 空段落测试：连续空行会不会间距过大
 - 移动端预览：缩小到手机宽度（~375px），看装饰是否变形
+- **夜间模式测试**：`--output-dark-preview` 生成夜间预览，确认没有深浅不一的灰阶马赛克（模板里的浅色块是重点，复刻时不要 1:1 照搬浅色底，改用 `var(--weui-BG-2, ...)`）
 
 ---
 
