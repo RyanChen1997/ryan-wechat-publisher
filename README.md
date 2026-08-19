@@ -4,6 +4,15 @@
 
 ---
 
+## 🖼️ 排版效果预览
+
+| | | |
+|---|---|---|
+| ![](assets/previews/thumbs/blue-dot-notes.png) | ![](assets/previews/thumbs/purple-badge.png) | ![](assets/previews/thumbs/elegant-minimal.png) |
+| ![](assets/previews/thumbs/vibrant-badge.png) | ![](assets/previews/thumbs/geek-tech.png) | ![](assets/previews/thumbs/wechat-blue-yellow.png) |
+
+---
+
 ## ✨ 它能做什么
 
 ### 1. 内置多套排版模板，一键套用
