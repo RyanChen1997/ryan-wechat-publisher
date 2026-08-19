@@ -98,6 +98,20 @@ description: 微信公众号文章一条龙工作流 — 从原始文章（Markd
 - 正文从 `#` 一级标题开始，不额外加"文章总标题"层（草稿 title 取第一个 `#` 文本）
 - 需要用户确认的步骤（第 2、4、7 步），等用户明确答复后才继续
 
+## 预设包结构
+
+每个具体预设都是 `scripts/presets/<preset-id>/` 下的独立包，入口统一为 `index.js`。与该预设绑定的 SVG、PNG、GIF、生成脚本和说明文档放在同一包内，避免所有预设共享一个全局素材目录。
+
+```text
+scripts/presets/<preset-id>/
+├── index.js
+├── assets/       # 可选：预渲染图片或装饰缓存
+├── svg/          # 可选：SVG 设计源
+└── README.md     # 可选：复杂预设的使用说明
+```
+
+`scripts/presets/base.js` 是公共渲染引擎，`scripts/presets/index.js` 是预设注册器，两者不属于具体预设包。
+
 ## 资源索引
 
 | 分类 | 文件 | 作用 |

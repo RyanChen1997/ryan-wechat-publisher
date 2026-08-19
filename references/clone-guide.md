@@ -41,7 +41,7 @@
    - 复杂装饰（标题徽章、植物装饰、丝带等图形）→ **先画 SVG，再用 `@resvg/resvg-js` 转 PNG**，发布时走图片上传流水线。详见下方"装饰图实现规范"
    - **列表圆点不要用 `<ul>/<li>` + `position: absolute`**，公众号会同时显示默认列表符号，样式错乱。统一用 `<section>` + 内联文字圆点（`•` 或 `·`）实现
 3. **补齐缺失元素**：模板里没有的元素（比如没有引用块、没有列表），用模板的主色和设计语言自行设计，保持风格一致
-4. **输出为 preset 文件**：格式参考 `scripts/presets/vibrant-badge.js`（含装饰图的预设范例）
+4. **输出为 preset 包**：格式参考 `scripts/presets/vibrant-badge/index.js`（含装饰图的预设范例）；预设专属素材放在同一目录的 `assets/` 或 `svg/` 下
 
 ---
 
@@ -60,7 +60,7 @@
 ### DecoAssetManager 用法
 
 ```js
-const { DecoAssetManager } = require('../utils/svg-to-png');
+const { DecoAssetManager } = require('../../utils/svg-to-png');
 
 const DECO_SVG = `<svg ...>...</svg>`;
 const decoAssets = new DecoAssetManager(__dirname); // 缓存到 preset 目录的 assets/ 下

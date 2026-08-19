@@ -1,9 +1,10 @@
-const blueDotNotes = require('./blue-dot-notes');
-const purpleBadge = require('./purple-badge');
-const vibrantBadge = require('./vibrant-badge');
-const elegantMinimal = require('./elegant-minimal');
-const geekTech = require('./geek-tech');
-const wechatBlueYellow = require('./wechat-blue-yellow');
+const blueDotNotes = require('./blue-dot-notes/index');
+const purpleBadge = require('./purple-badge/index');
+const vibrantBadge = require('./vibrant-badge/index');
+const elegantMinimal = require('./elegant-minimal/index');
+const geekTech = require('./geek-tech/index');
+const wechatBlueYellow = require('./wechat-blue-yellow/index');
+const childlikeDoodle = require('./childlike-doodle/index');
 
 const PRESETS = {
   'blue-dot-notes': blueDotNotes,
@@ -12,6 +13,7 @@ const PRESETS = {
   'elegant-minimal': elegantMinimal,
   'geek-tech': geekTech,
   'wechat-blue-yellow': wechatBlueYellow,
+  'childlike-doodle': childlikeDoodle,
 };
 
 function getPreset(id) {

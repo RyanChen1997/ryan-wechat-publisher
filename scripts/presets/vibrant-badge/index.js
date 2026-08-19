@@ -1,5 +1,5 @@
 const path = require('path');
-const { DecoAssetManager } = require('../utils/svg-to-png');
+const { DecoAssetManager } = require('../../utils/svg-to-png');
 
 const PRESET_DIR = __dirname;
 

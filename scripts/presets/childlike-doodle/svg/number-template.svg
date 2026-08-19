@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 680" width="760" height="680">
+  <defs>
+    <filter id="rough-number" x="-12%" y="-12%" width="124%" height="124%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="{{SEED}}" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="9" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+
+  <!-- 用深灰色不规则描边模拟马克笔手绘轮廓。 -->
+  <text
+    x="380"
+    y="565"
+    text-anchor="middle"
+    textLength="{{TEXT_WIDTH}}"
+    lengthAdjust="spacingAndGlyphs"
+    font-family="Marker Felt, Chalkboard SE, Noteworthy, Arial Rounded MT Bold, sans-serif"
+    font-size="{{FONT_SIZE}}"
+    font-weight="700"
+    fill="{{COLOR}}"
+    stroke="#363636"
+    stroke-width="16"
+    stroke-linejoin="round"
+    paint-order="stroke fill"
+    filter="url(#rough-number)"
+  >{{NUMBER}}</text>
+</svg>

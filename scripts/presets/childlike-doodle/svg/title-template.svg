@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 280" width="1440" height="280">
+  <defs>
+    <filter id="rough-brush" x="-8%" y="-25%" width="116%" height="150%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.055" numOctaves="3" seed="9" result="brush-noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="brush-noise" scale="13" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.028 0.14" numOctaves="2" seed="31" result="paper-grain"/>
+      <feColorMatrix in="paper-grain" type="matrix" values="
+        0 0 0 0 1
+        0 0 0 0 1
+        0 0 0 0 1
+        1 0 0 0 0" result="grain-alpha"/>
+      <feComponentTransfer in="grain-alpha" result="grain-contrast">
+        <feFuncA type="table" tableValues="0 0.38 0.76 0.94 1"/>
+      </feComponentTransfer>
+      <feComposite in="displaced" in2="grain-contrast" operator="in"/>
+    </filter>
+    <filter id="rough-title" x="-5%" y="-18%" width="110%" height="136%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.018 0.08" numOctaves="2" seed="17" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <pattern id="paper-fibers" width="96" height="34" patternUnits="userSpaceOnUse" patternTransform="rotate(-2)">
+      <path d="M5 8 L26 7 M54 10 L82 8" stroke="black" stroke-width="2" stroke-linecap="round" opacity="0.30"/>
+      <path d="M19 23 L44 21 M69 27 L91 25" stroke="black" stroke-width="3" stroke-linecap="round" opacity="0.22"/>
+      <ellipse cx="38" cy="13" rx="6" ry="1.5" fill="black" opacity="0.26"/>
+      <ellipse cx="60" cy="29" rx="4" ry="1.2" fill="black" opacity="0.24"/>
+      <circle cx="89" cy="17" r="1.6" fill="black" opacity="0.28"/>
+    </pattern>
+    <mask id="fiber-mask">
+      <rect width="1440" height="280" fill="white"/>
+      <rect x="140" y="42" width="1140" height="194" fill="url(#paper-fibers)"/>
+    </mask>
+    <mask id="dry-brush-mask">
+      <rect width="1440" height="280" fill="black"/>
+      <g fill="none" stroke="white" stroke-linecap="round" filter="url(#rough-brush)">
+        <path d="M238 76 C426 60 626 69 815 64 C958 60 1095 70 1190 78" stroke-width="42"/>
+        <path d="M195 101 C392 88 580 103 770 94 C948 85 1106 101 1238 106" stroke-width="46"/>
+        <path d="M174 130 C346 115 554 136 727 124 C910 112 1084 130 1258 127" stroke-width="50"/>
+        <path d="M188 158 C377 144 560 164 756 151 C947 139 1126 159 1240 157" stroke-width="47"/>
+        <path d="M226 184 C408 170 594 190 783 177 C948 166 1097 180 1188 187" stroke-width="42"/>
+        <path d="M286 204 C470 192 659 207 840 197 C959 190 1061 195 1122 200" stroke-width="28" opacity="0.82"/>
+      </g>
+
+      <!-- 干刷留下的细小透白纹理。 -->
+      <g fill="black" opacity="0.78">
+        <ellipse cx="252" cy="91" rx="19" ry="3"/>
+        <ellipse cx="337" cy="115" rx="31" ry="4"/>
+        <ellipse cx="438" cy="82" rx="17" ry="3"/>
+        <ellipse cx="538" cy="147" rx="27" ry="3"/>
+        <ellipse cx="635" cy="105" rx="20" ry="4"/>
+        <ellipse cx="723" cy="178" rx="34" ry="3"/>
+        <ellipse cx="835" cy="91" rx="28" ry="3"/>
+        <ellipse cx="944" cy="137" rx="38" ry="4"/>
+        <ellipse cx="1065" cy="111" rx="25" ry="3"/>
+        <ellipse cx="1161" cy="165" rx="31" ry="4"/>
+      </g>
+      <g fill="none" stroke="black" stroke-linecap="round" opacity="0.42">
+        <path d="M226 121 C340 116 444 124 546 119" stroke-width="3" stroke-dasharray="22 17 8 27"/>
+        <path d="M408 172 C561 165 704 177 838 168" stroke-width="4" stroke-dasharray="13 25 31 18"/>
+        <path d="M790 113 C932 105 1070 117 1190 112" stroke-width="3" stroke-dasharray="29 16 9 24"/>
+        <path d="M270 194 C408 187 530 199 662 191" stroke-width="3" stroke-dasharray="17 28 35 20"/>
+      </g>
+    </mask>
+  </defs>
+
+  <!-- 分层干刷：每条笔触的长度、弧度、浓淡都不同，不使用实心底块。 -->
+  <g fill="none" stroke-linecap="butt" filter="url(#rough-brush)" mask="url(#fiber-mask)">
+    <path d="M278 70 C442 55 638 72 811 61 C958 52 1080 62 1154 72" stroke="#FFE989" stroke-width="24" opacity="0.48"/>
+    <path d="M228 91 C404 76 606 98 790 83 C976 68 1113 83 1209 92" stroke="#FFE36F" stroke-width="36" opacity="0.68"/>
+    <path d="M188 116 C374 98 582 124 762 106 C950 88 1126 105 1240 116" stroke="#FFDF58" stroke-width="43" opacity="0.76"/>
+    <path d="M174 143 C354 124 562 150 746 133 C934 116 1122 133 1254 140" stroke="#FFE36F" stroke-width="46" opacity="0.80"/>
+    <path d="M190 169 C379 150 572 178 765 159 C948 141 1126 158 1232 165" stroke="#FFE36F" stroke-width="42" opacity="0.72"/>
+    <path d="M229 193 C417 177 601 202 790 184 C947 169 1085 180 1181 190" stroke="#FFE97F" stroke-width="34" opacity="0.60"/>
+    <path d="M301 211 C473 199 641 218 812 204 C932 194 1030 199 1098 204" stroke="#FFE989" stroke-width="19" opacity="0.38"/>
+  </g>
+  <!-- 少量半透明拖痕，模拟干笔刷在纸面留下的纤维纹。 -->
+  <g fill="none" stroke="#FFD94A" stroke-linecap="round" opacity="0.28">
+    <path d="M221 104 C404 94 548 111 706 99" stroke-width="5" stroke-dasharray="44 18 13 26"/>
+    <path d="M316 132 C504 118 687 140 851 124" stroke-width="4" stroke-dasharray="28 20 56 17"/>
+    <path d="M663 151 C855 133 1035 148 1192 150" stroke-width="5" stroke-dasharray="37 22 16 31"/>
+    <path d="M248 181 C426 166 604 190 783 173" stroke-width="4" stroke-dasharray="19 30 48 21"/>
+  </g>
+  <text
+    x="720"
+    y="181"
+    text-anchor="middle"
+    textLength="{{TEXT_WIDTH}}"
+    lengthAdjust="spacingAndGlyphs"
+    font-family="Hiragino Sans GB, Heiti SC, PingFang SC, sans-serif"
+    font-size="{{FONT_SIZE}}"
+    font-weight="700"
+    letter-spacing="5"
+    fill="#72BCEA"
+    filter="url(#rough-title)"
+  >{{TITLE}}</text>
+</svg>
