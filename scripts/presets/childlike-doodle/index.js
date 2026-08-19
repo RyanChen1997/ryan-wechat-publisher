@@ -112,9 +112,11 @@ function chapterNumber(counter) {
   return decoAssets.get(numberSvg(counter), `number-${String(counter).padStart(2, '0')}`, 760);
 }
 
+// 预览模式用 copyAsset/DecoAssetManager 返回的真实路径（绝对路径，可直接访问），
+// 发布模式保持裸文件名（data-src，走图片上传流水线）。与其他预设行为一致。
 function assetAttr(src) {
   return useLocalPath
-    ? `src="assets/${path.basename(src)}"`
+    ? `src="${src}"`
     : `data-src="${path.basename(src)}"`;
 }
 
@@ -162,9 +164,8 @@ const decorations = {
   makeImage(imgSrc, imgAlt, caption, local, resolveImage, S) {
     let src = local ? resolveImage(imgSrc) : imgSrc;
     if (local && outputDir && fs.existsSync(src)) {
-      const fileName = path.basename(src);
-      copyAsset(src, fileName);
-      src = `assets/${fileName}`;
+      // copyAsset 预览模式返回绝对路径，直接用（避免硬编码 assets/ 前缀导致路径不匹配）
+      src = copyAsset(src, path.basename(src));
     }
     const srcAttr = local ? 'src' : 'data-src';
     let html = `<section style="${S.img_section}"><img ${srcAttr}="${src}" alt="${escapeXml(imgAlt)}" style="${S.img}"/></section>`;
