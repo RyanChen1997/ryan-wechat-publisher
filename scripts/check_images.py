@@ -2,7 +2,7 @@
 """
 图片存在性校验：检查 HTML 中所有本地图片路径是否真实存在。
 
-用法: python3 check_images.py <article.html> [--asset-dir DIR]...
+用法: python3 check_images.py <article.html> [--asset-dir DIR]... [--url-prefix PREFIX]...
 输出: PASS 或 FAIL + 缺失图片列表
 """
 
@@ -20,7 +20,7 @@ def extract_images(html_content, use_local_path=True):
     return [html_mod.unescape(m) for m in matches]
 
 
-def resolve_image(img_src, asset_dirs):
+def resolve_image(img_src, asset_dirs, url_prefixes=None):
     """在所有 asset 目录中查找图片，返回绝对路径或 None"""
     if re.match(r'^https?://', img_src) or img_src.startswith('data:'):
         return img_src
@@ -28,24 +28,39 @@ def resolve_image(img_src, asset_dirs):
     if os.path.isabs(img_src) and os.path.exists(img_src):
         return img_src
 
+    candidates = [img_src]
+    for prefix in url_prefixes or []:
+        normalized = prefix.strip('/') + '/'
+        if img_src.startswith(normalized):
+            candidates.append(img_src[len(normalized):])
     for d in asset_dirs:
-        p = os.path.join(d, img_src)
-        if os.path.exists(p):
-            return os.path.abspath(p)
+        for candidate in candidates:
+            p = os.path.join(d, candidate)
+            if os.path.exists(p):
+                return os.path.abspath(p)
 
     return None
 
 
 def main():
     if len(sys.argv) < 2:
-        print("用法: python3 check_images.py <article.html> [--asset-dir DIR]...")
+        print("用法: python3 check_images.py <article.html> [--asset-dir DIR]... [--url-prefix PREFIX]...")
         sys.exit(1)
 
     html_path = sys.argv[1]
     asset_dirs = []
-    for i, arg in enumerate(sys.argv[2:]):
-        if arg == '--asset-dir' and i + 1 < len(sys.argv) - 2:
-            asset_dirs.append(sys.argv[2:][i + 1])
+    url_prefixes = []
+    args = sys.argv[2:]
+    index = 0
+    while index < len(args):
+        if args[index] == '--asset-dir' and index + 1 < len(args):
+            asset_dirs.append(args[index + 1])
+            index += 2
+        elif args[index] == '--url-prefix' and index + 1 < len(args):
+            url_prefixes.append(args[index + 1])
+            index += 2
+        else:
+            index += 1
 
     html_dir = os.path.dirname(os.path.abspath(html_path))
     if html_dir not in asset_dirs:
@@ -66,7 +81,7 @@ def main():
     missing = []
     found = []
     for p in img_paths:
-        resolved = resolve_image(p, asset_dirs)
+        resolved = resolve_image(p, asset_dirs, url_prefixes)
         if resolved:
             found.append((p, resolved))
         else:

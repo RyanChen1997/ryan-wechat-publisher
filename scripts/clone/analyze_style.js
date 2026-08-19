@@ -14,6 +14,7 @@ function requireOrExit(modName, usage) {
 const cheerio = requireOrExit('cheerio', '复刻样式分析功能需要该模块');
 const fs = require('fs');
 const path = require('path');
+const { buildAssetInventory } = require('./asset_inventory');
 
 function getStyleObj(el) {
   const styleStr = el.attribs?.style || '';
@@ -166,6 +167,38 @@ function analyzeColors(textNodes, images) {
   };
 }
 
+function analyzeEmphasis($, root) {
+  const samples = [];
+  root.find('strong, b, span').each((i, el) => {
+    const style = getInheritedStyle(el);
+    const weight = String(style['font-weight'] || '').toLowerCase();
+    const isStrongTag = el.name === 'strong' || el.name === 'b';
+    const isBoldStyle = weight === 'bold' || Number.parseInt(weight, 10) >= 600;
+    if (!isStrongTag && !isBoldStyle) return;
+    const text = $(el).text().replace(/\s+/g, ' ').trim();
+    if (!text) return;
+    samples.push({
+      text: text.slice(0, 80),
+      color: style.color || 'inherit',
+      font_size: style['font-size'] || 'inherit',
+      font_weight: style['font-weight'] || (isStrongTag ? 'bold' : 'inherit'),
+    });
+  });
+
+  const palette = {};
+  samples.forEach((sample) => {
+    palette[sample.color] = (palette[sample.color] || 0) + 1;
+  });
+  return {
+    count: samples.length,
+    palette: Object.entries(palette)
+      .sort((a, b) => b[1] - a[1])
+      .map(([color, count]) => ({ color, count })),
+    samples: samples.slice(0, 20),
+    uses_multiple_colors: Object.keys(palette).length > 1,
+  };
+}
+
 function findDecorations($, root) {
   const decos = {
     title_decorations: [],
@@ -262,6 +295,8 @@ function analyzeStyle(contentHtmlPath) {
   const colors = analyzeColors(textNodes, images);
   const decorations = findDecorations($, rootEl);
   const spacing = analyzeParagraphSpacing($, rootEl);
+  const emphasis = analyzeEmphasis($, rootEl);
+  const assetInventory = buildAssetInventory(html, { generatedAt: null });
 
   const bodySize = fontSizes[0]?.[0] || '16px';
   const bodyColor = colors.text_colors[0]?.[0] || '#333';
@@ -286,7 +321,17 @@ function analyzeStyle(contentHtmlPath) {
       },
     },
     colors,
+    emphasis,
     decorations,
+    asset_inventory_summary: {
+      asset_count: assetInventory.asset_count,
+      animated_count: assetInventory.animated_count,
+      image_heading_candidate_count: assetInventory.image_heading_candidate_count,
+      image_heading_candidates: assetInventory.assets
+        .filter((asset) => asset.classification.image_heading_candidate)
+        .slice(0, 20),
+      requires_visual_review: assetInventory.requires_visual_review,
+    },
     paragraph_spacing: spacing,
     text_node_count: textNodes.length,
     font_size_distribution: fontSizes,
@@ -320,7 +365,9 @@ if (require.main === module) {
     console.log(`  H${i+1}: ${h.font_size} ${h.color} ${h.font_weight} (${h.count}个)`);
   });
   console.log('图片数:', result.images.count);
+  console.log('图片标题候选:', result.asset_inventory_summary.image_heading_candidate_count);
+  console.log('强调色:', result.emphasis.palette.map((entry) => `${entry.color}×${entry.count}`).join(', ') || '未识别');
   console.log('段落间距方式:', result.paragraph_spacing.uses_empty_lines ? '空行法' : 'margin法');
 }
 
-module.exports = { analyzeStyle, getInheritedStyle, getStyleObj, parsePx };
+module.exports = { analyzeStyle, analyzeEmphasis, getInheritedStyle, getStyleObj, parsePx };

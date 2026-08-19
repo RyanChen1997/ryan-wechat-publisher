@@ -1,0 +1,17 @@
+{
+  "mode": "system-fallback",
+  "reason": "中文标题需要运行时替换占位符；数字 1～10 已预渲染，动态标题和大于 10 的数字使用系统字体回退。",
+  "boundary_tests": [
+    "2 个中文字",
+    "8 个中文字",
+    "14 个中文字",
+    "24 个中文字",
+    "两位数序号"
+  ],
+  "preferred_families": [
+    "PingFang SC",
+    "Hiragino Sans GB",
+    "Heiti SC",
+    "sans-serif"
+  ]
+}

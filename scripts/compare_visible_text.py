@@ -11,6 +11,11 @@ import sys
 import re
 import html
 
+# CLI 入口已升级为语义比较器。保留本文件中的旧函数，避免破坏可能存在的 Python 导入方。
+if __name__ == '__main__':
+    from semantic_compare import main as semantic_main
+    sys.exit(semantic_main())
+
 DECOR_PATTERNS = [
     re.compile(r'^PART\.\d+$', re.IGNORECASE),
     # purple-badge 数字徽章装饰（如 `01 ✦ ✦ ✧`）

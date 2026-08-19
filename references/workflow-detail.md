@@ -153,6 +153,8 @@ node scripts/render.js \
   --output-preview 04-html/article-preview.html \
   --output-dark-preview 04-html/article-dark-preview.html \
   --title "文章标题" \
+  --asset-output-dir 04-html/assets \
+  --asset-url-prefix assets \
   --asset-dir 02-structured/
 ```
 
@@ -199,7 +201,9 @@ python3 scripts/validate_wechat_html.py \
 ```bash
 python3 scripts/check_images.py \
   04-html/article-body.html \
+  --asset-dir 04-html/assets \
   --asset-dir 02-structured/ \
+  --url-prefix assets \
   > 05-validation/images-check.log 2>&1
 ```
 
@@ -297,7 +301,8 @@ python3 scripts/upload_and_publish.py \
   --cover /path/to/cover.jpg \
   --digest "摘要（≤120字）" \
   --author "作者" \
-  --article-dir 02-structured/ \
+  --article-dir 04-html/ \
+  --asset-dir 02-structured/ \
   --output-dir 09-publish/
 ```
 

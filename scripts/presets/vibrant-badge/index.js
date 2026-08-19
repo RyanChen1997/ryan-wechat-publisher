@@ -1,5 +1,6 @@
 const path = require('path');
 const { DecoAssetManager } = require('../../utils/svg-to-png');
+const { semanticAttributes } = require('../../utils/semantic-html');
 
 const PRESET_DIR = __dirname;
 
@@ -110,9 +111,9 @@ const decorations = (() => {
   }
 
   return {
-    setAssetDir(dir, useLocal) {
+    setAssetDir(dir, useLocal, context = {}) {
       useLocalPath = useLocal;
-      decoAssets.setOutput(dir, useLocal);
+      decoAssets.setOutput({ outputDir: dir, useLocalPath: useLocal, urlPrefix: context.assetUrlPrefix });
     },
 
     beforeContent() {
@@ -132,7 +133,7 @@ const decorations = (() => {
       const inlineHtml = parseInline(text);
       const magSrc = decoImgSrc(MAGNIFIER_SVG, 'magnifier', 168);
       const magnifier = `<section style="${S.h1_magnifier}"><img ${imgAttr(magSrc)} alt="" style="${S.h1_magnifier_img}"/></section>`;
-      const headingHtml = `<section style="${S.h1_container}">
+      const headingHtml = `<section ${semanticAttributes(text, 'heading-1')} style="${S.h1_container}">
   <section style="${S.h1_inner}">
     <section style="${S.h1_badge_row}">
       <section style="${S.h1_badge}">

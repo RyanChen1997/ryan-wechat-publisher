@@ -75,13 +75,16 @@ description: 微信公众号文章一条龙工作流 — 从原始文章（Markd
 > [!caution] 复刻排版需要视觉能力
 > 开始复刻前先告知用户：复刻需要分析模板的视觉风格，效果取决于模型是否有图片理解能力。复杂装饰的还原度可能有限。确认后再进入。
 
-复刻流程（6 步）：
-1. 抓取模板 + 清洗
-2. 样式分析（由宏观到微观：整体 → 区块 → 单元素）
+复刻流程（7 步）：
+1. 抓取模板、归档原始图片并生成资产清单
+2. 先审查图片标题/GIF/装饰候选，再分析 CSS 和强调色规则
 3. 元素映射规划（md 元素 → 模板角色）
-4. 生成 cloned preset + 渲染
-5. 验证门禁（L1 整体 → L2 关键元素 → L3 细节 → L4 边界）
-6. 加入排版方案确认
+4. 在已有排版方案确认中同时确认：仅本次使用，或持久化到当前引用 Skill（通常推荐持久化）
+5. 生成 cloned preset + 渲染
+6. 生成关键元素并排视觉门禁，完成 L1 整体 → L2 关键元素 → L3 细节 → L4 边界验证
+7. 通过语义内容、微信兼容和图片存在性校验
+
+不要新增 `.skillman`、`.codex` 等环境专属同步选项。选择持久化时，保存到本次实际引用的 Skill 根目录 `scripts/presets/<id>/`；选择仅本次使用时，保留在任务工作目录。
 
 详细步骤、分析方法、验证门禁、常见模式、踩坑清单，详见 `references/clone-guide.md`。
 
@@ -105,8 +108,9 @@ description: 微信公众号文章一条龙工作流 — 从原始文章（Markd
 ```text
 scripts/presets/<preset-id>/
 ├── index.js
-├── assets/       # 可选：预渲染图片或装饰缓存
+├── assets/       # 可选：只放不可变源素材或预渲染成品，不放运行时缓存
 ├── svg/          # 可选：SVG 设计源
+├── font-policy.json # SVG 含文字时必需：字体可移植策略
 └── README.md     # 可选：复杂预设的使用说明
 ```
 
@@ -128,5 +132,8 @@ scripts/presets/<preset-id>/
 | 校验 | `scripts/check_images.py` | 图片存在性校验 |
 | 发布 | `scripts/upload_and_publish.py` | 图片上传 + 草稿创建（HTTP 调用云托管 API） |
 | 复刻 | `scripts/clone/fetch_template.js` | 抓取模板文章 |
+| 复刻 | `scripts/clone/asset_inventory.js` | 图片资产盘点与图片标题候选识别 |
 | 复刻 | `scripts/clone/analyze_style.js` | 样式自动分析 |
+| 复刻 | `scripts/clone/build_visual_review.js` | 生成关键元素并排视觉门禁 |
+| 复刻 | `scripts/clone/check_svg_fonts.js` | 检查 SVG 文字字体策略 |
 | 输入 | `scripts/parse_docx.py` | Word → Markdown 解析 |

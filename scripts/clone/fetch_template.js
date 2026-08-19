@@ -15,6 +15,8 @@ const request = requireOrExit('request-promise', '复刻抓取功能需要该模
 const cheerio = requireOrExit('cheerio', '复刻抓取功能需要该模块');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
+const { buildAssetInventory, imageFormat } = require('./asset_inventory');
 
 const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36';
 
@@ -61,10 +63,79 @@ function cleanJsContent(jsContentHtml) {
   return html;
 }
 
-async function fetchTemplate(url, outputDir) {
+function extensionFromContentType(contentType) {
+  const type = String(contentType || '').split(';')[0].trim().toLowerCase();
+  return ({
+    'image/gif': 'gif',
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+    'image/svg+xml': 'svg',
+  })[type] || null;
+}
+
+async function downloadInventoryAssets(inventory, outputDir, referer) {
+  const assetDir = path.join(outputDir, 'template-assets');
+  fs.mkdirSync(assetDir, { recursive: true });
+
+  async function download(asset) {
+    if (!asset.src || !/^https?:\/\/|^\/\//.test(asset.src)) {
+      asset.download_error = '不是可下载的 HTTP(S) 地址';
+      return;
+    }
+    const uri = asset.src.startsWith('//') ? `https:${asset.src}` : asset.src;
+    try {
+      const response = await request({
+        uri,
+        method: 'GET',
+        encoding: null,
+        resolveWithFullResponse: true,
+        headers: {
+          'user-agent': USER_AGENT,
+          Referer: referer,
+          Accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+        },
+      });
+      const body = Buffer.isBuffer(response.body) ? response.body : Buffer.from(response.body);
+      const contentType = response.headers['content-type'] || '';
+      const extension = imageFormat(uri) || extensionFromContentType(contentType) || 'bin';
+      const fileName = `asset-${String(asset.index + 1).padStart(3, '0')}.${extension}`;
+      const target = path.join(assetDir, fileName);
+      fs.writeFileSync(target, body);
+      asset.local_path = path.relative(outputDir, target);
+      asset.format = extension;
+      if (asset.classification) asset.classification.animated = extension === 'gif';
+      asset.mime_type = contentType.split(';')[0] || null;
+      asset.byte_size = body.length;
+      asset.sha256 = crypto.createHash('sha256').update(body).digest('hex');
+      asset.download_error = null;
+    } catch (error) {
+      asset.download_error = error.message;
+    }
+  }
+
+  for (let index = 0; index < inventory.assets.length; index += 4) {
+    await Promise.all(inventory.assets.slice(index, index + 4).map(download));
+  }
+  inventory.downloaded_count = inventory.assets.filter((asset) => asset.local_path).length;
+  inventory.download_failed_count = inventory.assets.filter((asset) => asset.download_error).length;
+  inventory.animated_count = inventory.assets.filter((asset) => asset.format === 'gif').length;
+}
+
+function localizeTemplateImages(contentHtml, inventory) {
+  const $ = cheerio.load(contentHtml, { decodeEntities: false });
+  $('img').each((index, element) => {
+    const localPath = inventory.assets[index] && inventory.assets[index].local_path;
+    if (localPath) $(element).attr('src', localPath);
+  });
+  return $('body').length ? $('body').html() : $.html();
+}
+
+async function fetchTemplate(url, outputDir, options = {}) {
   if (!isValidWechatUrl(url)) {
     throw new Error('不是有效的微信公众号文章链接');
   }
+  fs.mkdirSync(outputDir, { recursive: true });
 
   const host = /weixin\.sogou\.com/.test(url) ? 'weixin.sogou.com' : 'mp.weixin.qq.com';
 
@@ -96,6 +167,17 @@ async function fetchTemplate(url, outputDir) {
   fs.writeFileSync(path.join(outputDir, 'template-content.html'), cleanHtml);
   console.log('  正文 HTML 已清洗保存');
 
+  const inventory = buildAssetInventory(cleanHtml, { sourceUrl: url });
+  if (options.downloadAssets !== false) {
+    console.log(`  正在归档 ${inventory.asset_count} 张原始图片...`);
+    await downloadInventoryAssets(inventory, outputDir, url);
+  }
+  const inventoryPath = path.join(outputDir, 'asset-inventory.json');
+  fs.writeFileSync(inventoryPath, JSON.stringify(inventory, null, 2));
+  const localContentPath = path.join(outputDir, 'template-content-local.html');
+  fs.writeFileSync(localContentPath, localizeTemplateImages(cleanHtml, inventory));
+  console.log(`  资产清单已保存（图片标题候选 ${inventory.image_heading_candidate_count} 处）`);
+
   const title = $('.rich_media_title').text().trim() || '';
   const meta = extractMeta(rawHtml);
 
@@ -108,6 +190,9 @@ async function fetchTemplate(url, outputDir) {
     publish_time: meta.ct ? new Date(meta.ct * 1000).toISOString() : null,
     raw_html_path: path.join(outputDir, 'template-raw.html'),
     content_html_path: path.join(outputDir, 'template-content.html'),
+    local_content_html_path: localContentPath,
+    asset_inventory_path: inventoryPath,
+    downloaded_asset_count: inventory.downloaded_count || 0,
     content_length: cleanHtml.length,
   };
 
@@ -121,6 +206,7 @@ async function fetchTemplate(url, outputDir) {
 if (require.main === module) {
   const url = process.argv[2];
   const outputDir = process.argv[3] || '.';
+  const downloadAssets = !process.argv.includes('--no-download-assets');
 
   if (!url) {
     console.error('用法: node fetch_template.js <公众号文章URL> [输出目录]');
@@ -129,7 +215,7 @@ if (require.main === module) {
 
   fs.mkdirSync(outputDir, { recursive: true });
 
-  fetchTemplate(url, outputDir)
+  fetchTemplate(url, outputDir, { downloadAssets })
     .then(result => {
       fs.writeFileSync(path.join(outputDir, 'fetch-result.json'),
         JSON.stringify(result, null, 2));
@@ -141,4 +227,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { fetchTemplate, cleanJsContent, USER_AGENT };
+module.exports = { fetchTemplate, cleanJsContent, downloadInventoryAssets, localizeTemplateImages, USER_AGENT };

@@ -1,5 +1,6 @@
 const path = require('path');
 const { DecoAssetManager } = require('../../utils/svg-to-png');
+const { semanticAttributes } = require('../../utils/semantic-html');
 
 const PRESET_DIR = __dirname;
 
@@ -70,9 +71,9 @@ function pad2(n) {
 }
 
 const decorations = {
-  setAssetDir(dir, useLocal) {
+  setAssetDir(dir, useLocal, context = {}) {
     useLocalPath = useLocal;
-    decoAssets.setOutput(dir, useLocal);
+    decoAssets.setOutput({ outputDir: dir, useLocalPath: useLocal, urlPrefix: context.assetUrlPrefix });
   },
 
   makeH1(text, counter, parseInline, S) {
@@ -80,7 +81,7 @@ const decorations = {
     const num = pad2(counter);
     const barSrc = decoImgSrc(YELLOW_BAR_SVG, 'yellow-bar', 80);
 
-    return `<section style="${S.h1_outer}">
+    return `<section ${semanticAttributes(text, 'heading-1')} style="${S.h1_outer}">
   <section style="${S.h1_num_section}">
     <span style="${S.h1_num_text}">${num}</span>
     <img ${imgAttr(barSrc)} alt="" style="${S.h1_bar_img}"/>

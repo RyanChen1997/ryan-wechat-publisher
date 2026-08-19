@@ -5,6 +5,7 @@ const path = require('path');
 const TEMPLATE_DIR = __dirname;
 const SKILL_ROOT = path.resolve(TEMPLATE_DIR, '../../..');
 const { DecoAssetManager } = require(path.join(SKILL_ROOT, 'scripts/utils/svg-to-png'));
+const { semanticAttributes } = require(path.join(SKILL_ROOT, 'scripts/utils/semantic-html'));
 
 const TITLE_TEMPLATE = fs.readFileSync(path.join(TEMPLATE_DIR, 'svg/title-template.svg'), 'utf8');
 const NUMBER_TEMPLATE = fs.readFileSync(path.join(TEMPLATE_DIR, 'svg/number-template.svg'), 'utf8');
@@ -19,7 +20,7 @@ const HIGHLIGHT_PALETTE = [
 ];
 const CACHE_ROOT = process.env.RYAN_WECHAT_TEMPLATE_CACHE_DIR
   || path.join(os.tmpdir(), 'ryan-wechat-publisher', 'childlike-doodle-cache');
-const decoAssets = new DecoAssetManager(CACHE_ROOT);
+const decoAssets = new DecoAssetManager({ presetDir: TEMPLATE_DIR, cacheDir: CACHE_ROOT });
 
 const STYLES = {
   outer: 'background-color: var(--weui-BG-2, #ffffff); padding: 8px 0 24px; box-sizing: border-box; color: rgb(62, 62, 62); font-size: 16px; line-height: 2; letter-spacing: 1.5px;',
@@ -30,7 +31,6 @@ const STYLES = {
   h1_number: 'display: inline-block; width: 12%; max-width: 84px; height: auto;',
   h1_title_row: 'text-align: center; margin: 0 auto;',
   h1_title: 'display: inline-block; width: 80%; max-width: 560px; height: auto;',
-  h1_semantic: 'display: none;',
   h2: 'margin: 30px 0 16px; color: rgb(134, 189, 224); font-size: 18px; line-height: 2; letter-spacing: 1.5px; font-weight: bold; text-align: center;',
   h3: 'margin: 24px 0 12px; color: rgb(112, 188, 234); font-size: 16px; line-height: 1.8; letter-spacing: 1.5px; font-weight: bold;',
   p: 'margin: 0 0 18px; color: rgb(62, 62, 62); font-size: 16px; line-height: 2; letter-spacing: 1.5px; text-align: justify;',
@@ -55,6 +55,7 @@ const STYLES = {
 
 let useLocalPath = false;
 let outputDir = null;
+let resolveAssetUrl = (name) => name;
 let currentChapter = 0;
 let highlightIndex = 0;
 
@@ -97,7 +98,7 @@ function copyAsset(source, outputName = path.basename(source)) {
   if (!outputDir) return outputName;
   const target = path.join(outputDir, outputName);
   if (!fs.existsSync(target)) fs.copyFileSync(source, target);
-  return useLocalPath ? target : outputName;
+  return useLocalPath ? target : resolveAssetUrl(outputName);
 }
 
 function copyTopArt(counter) {
@@ -117,15 +118,16 @@ function chapterNumber(counter) {
 function assetAttr(src) {
   return useLocalPath
     ? `src="${src}"`
-    : `data-src="${path.basename(src)}"`;
+    : `data-src="${src}"`;
 }
 
 const decorations = {
-  setAssetDir(dir, useLocal) {
+  setAssetDir(dir, useLocal, context = {}) {
     outputDir = dir;
     useLocalPath = useLocal;
+    resolveAssetUrl = context.assetUrl || ((name) => name);
     fs.mkdirSync(outputDir, { recursive: true });
-    decoAssets.setOutput(dir, useLocal);
+    decoAssets.setOutput({ outputDir: dir, useLocalPath: useLocal, urlPrefix: context.assetUrlPrefix });
   },
 
   beforeContent() {
@@ -144,11 +146,10 @@ const decorations = {
     const topArt = copyTopArt(counter);
     const number = chapterNumber(counter);
     const title = decoAssets.get(titleSvg(text), `chapter-${counter}-title`, 1440);
-    return `<section style="${S.h1_wrap}">
+    return `<section ${semanticAttributes(text, 'heading-1')} style="${S.h1_wrap}">
   <section style="${S.h1_doodle_row}"><img ${assetAttr(topArt)} alt="" style="${S.h1_doodle}"/></section>
   <section style="${S.h1_number_row}"><img ${assetAttr(number)} alt="第 ${counter} 章" style="${S.h1_number}"/></section>
   <section style="${S.h1_title_row}"><img ${assetAttr(title)} alt="${safeText}" style="${S.h1_title}"/></section>
-  <p style="${S.h1_semantic}">${parseInline(text)}</p>
 </section>`;
   },
 

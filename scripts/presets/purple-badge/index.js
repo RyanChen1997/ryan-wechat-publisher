@@ -63,14 +63,14 @@ const decorations = {
   makeH1(text, counter, parseInline, S) {
     const n = String(counter).padStart(2, '0');
     const inlineHtml = parseInline(text);
-    return `<section style="${S.h1_wrapper}">
+    return `<section data-role="decoration" aria-hidden="true" style="${S.h1_wrapper}">
   <span style="${S.h1_arc_bg}"></span>
   <span style="${S.h1_num}">${n}</span>
   <span style="${S.h1_star1}">✦</span>
   <span style="${S.h1_star2}">✦</span>
   <span style="${S.h1_star3}">✧</span>
 </section>
-<section style="${S.h1_text_outer}">
+<section data-semantic-role="heading-1" style="${S.h1_text_outer}">
   <span style="${S.h1_text_span}">${inlineHtml}</span>
 </section>`;
   },

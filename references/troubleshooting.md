@@ -47,8 +47,8 @@
 
 ### SVG 里的中文字体不一致
 
-标题文字不要写在 SVG `<text>` 里，用 HTML 文字 + CSS 实现标题，SVG 只做装饰背景。
-如果必须放 SVG 里，字体栈要写全：`'PingFang SC', 'Microsoft YaHei', sans-serif`
+标题文字优先用 HTML + CSS，SVG 只做装饰背景。
+如果原模板的标题本身就是图片、必须使用 SVG `<text>`，preset 目录要提供 `font-policy.json`，并运行 `scripts/clone/check_svg_fonts.js`。优先打包有授权的字体或转 path；使用 system-fallback 时必须检查 2/8/14/24 字标题和两位数序号。
 
 ### SVG 装饰图在公众号不显示
 
@@ -57,6 +57,7 @@
 **正确做法**：SVG 转 PNG，作为普通图片通过 `data-src` 走上传流水线。
 - 工具：`scripts/utils/svg-to-png.js` 中的 `DecoAssetManager`
 - 渲染：`decoAssets.get(svgString, name, width)` 拿到图片路径
+- 缓存：运行时缓存放临时目录，最终 PNG 放 `--asset-output-dir`，不要写回 preset 的 `assets/`
 - 详见 `references/clone-guide.md` 「装饰图实现规范」
 
 ### 列表圆点样式错乱（变成逗号/两个点）

@@ -58,6 +58,26 @@ def parse_rgb(value):
     return (int(m.group(1)), int(m.group(2)), int(m.group(3)))
 
 
+def parse_px(style_value, property_name):
+    match = re.search(rf'{property_name}\s*:\s*([\d.]+)px', style_value, re.IGNORECASE)
+    return float(match.group(1)) if match else None
+
+
+def is_accent_background(content, style_match, style_value, rgb):
+    """高饱和强调色和小面积装饰不按大块浅背景告警。"""
+    tag_start = content.rfind('<', 0, style_match.start())
+    tag_end = content.find('>', style_match.end())
+    opening_tag = content[tag_start:tag_end + 1] if tag_start >= 0 and tag_end >= 0 else ''
+    if re.search(r'data-role="(?:decoration|generated-decoration)"', opening_tag, re.IGNORECASE):
+        return True
+    width = parse_px(style_value, 'width')
+    height = parse_px(style_value, 'height')
+    if (width is not None and width <= 32) or (height is not None and height <= 10):
+        return True
+    saturation_span = max(rgb) - min(rgb)
+    return saturation_span >= 85
+
+
 def darkmode_warnings(content):
     """返回夜间模式告警列表（不阻断 PASS/FAIL 结果）。"""
     warnings = []
@@ -88,7 +108,7 @@ def darkmode_warnings(content):
             if rgb:
                 p = perceived_brightness(rgb)
                 bg_colors.add(rgb)
-                if 190 <= p <= 250:
+                if 190 <= p <= 250 and not is_accent_background(content, m, style_val, rgb):
                     light_bg_count += 1
                     warnings.append(
                         f"[夜间] 第{line_num}行: 浅色背景 {bg_value.strip()}（感知亮度 {p:.0f}），"

@@ -12,6 +12,8 @@ function main() {
   let outputPreview = null;
   let outputDarkPreview = null;
   let assetDirs = [];
+  let assetOutputDir = null;
+  let assetUrlPrefix = '';
   let title = '文章预览';
   let headingOffset = 0;
 
@@ -23,6 +25,8 @@ function main() {
       case '--output-preview': outputPreview = args[++i]; break;
       case '--output-dark-preview': outputDarkPreview = args[++i]; break;
       case '--asset-dir': assetDirs.push(args[++i]); break;
+      case '--asset-output-dir': assetOutputDir = args[++i]; break;
+      case '--asset-url-prefix': assetUrlPrefix = args[++i]; break;
       case '--title': title = args[++i]; break;
       case '--heading-offset': headingOffset = parseInt(args[++i]) || 0; break;
       default:
@@ -39,6 +43,8 @@ function main() {
     console.error('  --output-preview <路径> 预览版 HTML 输出路径');
   console.error('  --output-dark-preview <路径> 夜间模式预览 HTML 输出路径（模拟微信 mp-darkmode 算法）');
     console.error('  --asset-dir <目录>      图片搜索目录（可多次指定）');
+    console.error('  --asset-output-dir <目录> 动态生成图片的输出目录（与源素材目录分离）');
+    console.error('  --asset-url-prefix <前缀> 发布版动态图片 URL 前缀，如 assets');
     console.error('  --title <标题>          预览页标题');
     console.error('  --heading-offset <N>    标题层级偏移（-1=整体升一级，1=整体降一级）');
     process.exit(1);
@@ -63,23 +69,26 @@ function main() {
   const absAssetDirs = assetDirs.map(d => path.resolve(d));
   const mdDir = path.dirname(path.resolve(mdPath));
   if (!absAssetDirs.includes(mdDir)) absAssetDirs.push(mdDir);
+  const bodyPath = outputBody || path.join(path.dirname(mdPath), 'article-body.html');
+  const previewPath = outputPreview || path.join(path.dirname(mdPath), 'article-preview.html');
+  const generatedAssetDir = path.resolve(assetOutputDir || path.join(path.dirname(previewPath), 'assets'));
+  fs.mkdirSync(generatedAssetDir, { recursive: true });
 
   const publishHtml = renderMarkdown(md, preset, {
     useLocalImgPath: false,
     assetDirs: absAssetDirs,
     headingOffset,
-    assetOutputDir: absAssetDirs[0],
+    assetOutputDir: generatedAssetDir,
+    assetUrlPrefix,
   });
 
   const previewHtml = renderMarkdown(md, preset, {
     useLocalImgPath: true,
     assetDirs: absAssetDirs,
     headingOffset,
-    assetOutputDir: absAssetDirs[0],
+    assetOutputDir: generatedAssetDir,
+    assetUrlPrefix,
   });
-
-  const bodyPath = outputBody || path.join(path.dirname(mdPath), 'article-body.html');
-  const previewPath = outputPreview || path.join(path.dirname(mdPath), 'article-preview.html');
 
   fs.writeFileSync(bodyPath, publishHtml);
   console.log('发布版 HTML:', bodyPath, '(' + publishHtml.length + ' bytes)');

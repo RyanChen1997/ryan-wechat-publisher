@@ -88,6 +88,8 @@ node ../../render.js \
   --heading-offset 0 \
   --output-body /tmp/article-body.html \
   --output-preview /tmp/article-preview.html \
+  --asset-output-dir /tmp/article-assets \
+  --asset-url-prefix assets \
   --asset-dir /tmp/assets \
   --asset-dir /path/to/article-assets
 ```

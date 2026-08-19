@@ -7,6 +7,7 @@ function renderMarkdown(md, preset, options = {}) {
     assetDirs = [],
     headingOffset = 0,
     assetOutputDir = null,
+    assetUrlPrefix = '',
   } = options;
 
   const STYLES = preset.STYLES;
@@ -20,8 +21,17 @@ function renderMarkdown(md, preset, options = {}) {
   let sectionIndex = 0;
   let sectionOpen = false;
 
+  const normalizedAssetUrlPrefix = String(assetUrlPrefix || '').replace(/^\/+|\/+$/g, '');
+  const assetUrl = (fileName) => normalizedAssetUrlPrefix
+    ? path.posix.join(normalizedAssetUrlPrefix, fileName)
+    : fileName;
+
   if (decos.setAssetDir && assetOutputDir) {
-    decos.setAssetDir(assetOutputDir, useLocalImgPath);
+    decos.setAssetDir(assetOutputDir, useLocalImgPath, {
+      assetUrl,
+      assetUrlPrefix: normalizedAssetUrlPrefix,
+      outputDir: assetOutputDir,
+    });
   }
 
   function resolveImage(imgName) {
@@ -144,6 +154,8 @@ function renderMarkdown(md, preset, options = {}) {
 </section>`;
   }
 
+  // 状态必须在解析前重置；发布版和预览版会复用同一个 preset 实例。
+  const beforeContentHtml = decos.beforeContent ? decos.beforeContent(STYLES) : '';
   const lines = md.split('\n');
   const output = [];
   let inList = null;
@@ -318,7 +330,7 @@ function renderMarkdown(md, preset, options = {}) {
   }
 
   let inner = output.join('\n');
-  if (decos.beforeContent) inner = decos.beforeContent(STYLES) + '\n' + inner;
+  if (beforeContentHtml) inner = beforeContentHtml + '\n' + inner;
   if (decos.afterContent) inner = inner + '\n' + decos.afterContent(STYLES);
   if (STYLES.outer) {
     return `<section style="${STYLES.outer}">\n${inner}\n</section>`;

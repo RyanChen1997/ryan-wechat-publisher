@@ -143,10 +143,15 @@ def create_draft(base_url, title, content, thumb_media_id, digest="", author="")
     return api_post(base_url, "/api/draft/create", json_body={"article": article})
 
 
-def find_local_images(html_content, article_dir):
+def find_local_images(html_content, article_dir, asset_dirs=None):
     """找出 HTML 中所有本地图片路径（非 http/ 和非 data:）"""
     images = []
     seen = set()
+    search_dirs = [article_dir]
+    for directory in asset_dirs or []:
+        absolute = os.path.abspath(os.path.expanduser(directory))
+        if absolute not in search_dirs:
+            search_dirs.append(absolute)
 
     for m in re.finditer(r'<img[^>]+(?:src|data-src)="([^"]+)"', html_content, re.IGNORECASE):
         src = m.group(1)
@@ -156,13 +161,10 @@ def find_local_images(html_content, article_dir):
             continue
         seen.add(src)
 
-        if os.path.isabs(src):
-            abs_path = src
-        else:
-            abs_path = os.path.join(article_dir, src)
-        abs_path = os.path.normpath(abs_path)
+        candidates = [src] if os.path.isabs(src) else [os.path.join(directory, src) for directory in search_dirs]
+        abs_path = next((os.path.normpath(candidate) for candidate in candidates if os.path.exists(os.path.normpath(candidate))), None)
 
-        if os.path.exists(abs_path):
+        if abs_path:
             images.append({'original': src, 'abs_path': abs_path})
         else:
             print(f"[警告] 图片不存在: {src}", file=sys.stderr)
@@ -178,6 +180,7 @@ def main():
     parser.add_argument('--digest', default=None, help='摘要（≤120字）')
     parser.add_argument('--author', default=None, help='作者')
     parser.add_argument('--article-dir', default=None, help='文章所在目录（解析相对路径用）')
+    parser.add_argument('--asset-dir', action='append', default=[], help='额外图片搜索目录（可多次指定）')
     parser.add_argument('--output-dir', default=None, help='输出目录（默认与 HTML 同目录）')
     parser.add_argument('--publisher-url', default=None, help='WECHAT_PUBLISHER_URL（也可用环境变量）')
     args = parser.parse_args()
@@ -191,7 +194,7 @@ def main():
     output_dir = args.output_dir or article_dir
     os.makedirs(output_dir, exist_ok=True)
 
-    images = find_local_images(html_content, article_dir)
+    images = find_local_images(html_content, article_dir, args.asset_dir)
     print(f"找到 {len(images)} 张本地图片")
 
     uploaded_map = {}
