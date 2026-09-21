@@ -1,0 +1,390 @@
+/* ===========================================================================
+   公众号排版预览器（Studio）样式
+   注意：本文件的任何规则都不应命中文章内容（#wx 内部），
+   否则预览效果会与公众号真实排版产生偏差。文章只由内联样式控制。
+   =========================================================================== */
+
+:root {
+  --bg: #eef0f3;
+  --panel: #ffffff;
+  --panel-2: #f7f8fa;
+  --border: #e3e6ea;
+  --text: #1f2328;
+  --text-2: #6b7280;
+  --text-3: #9aa3ad;
+  --accent: #07c160;
+  --accent-dark: #06ad56;
+  --accent-ink: #ffffff;
+  --ok: #16794c;
+  --ok-bg: #eaf7f0;
+  --warn: #b45309;
+  --warn-bg: #fef4e6;
+  --danger: #b42318;
+  --danger-bg: #fdeceb;
+  --shadow-panel: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-canvas: 0 1px 3px rgba(16, 24, 40, 0.08), 0 12px 32px rgba(16, 24, 40, 0.1);
+  --radius: 12px;
+}
+
+:root[data-theme="dark"] {
+  --bg: #121316;
+  --panel: #1c1e22;
+  --panel-2: #23262b;
+  --border: #2e3238;
+  --text: #e8eaed;
+  --text-2: #9aa3ad;
+  --text-3: #6b7280;
+  --shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-canvas: 0 1px 3px rgba(0, 0, 0, 0.4), 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- 顶栏 ---------- */
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: 60px;
+  padding: 0 20px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+.bar-left, .bar-right { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.bar-logo { font-size: 14px; font-weight: 600; letter-spacing: 0.2px; white-space: nowrap; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 320px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.seg {
+  display: inline-flex;
+  padding: 2px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+.seg-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 12.5px;
+  padding: 5px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.seg-btn:hover { color: var(--text); }
+.seg-btn[aria-pressed="true"] {
+  background: var(--panel);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: var(--shadow-panel);
+}
+
+.btn-primary {
+  appearance: none;
+  border: 0;
+  border-radius: 9px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, transform 0.05s ease;
+}
+.btn-primary:hover { background: var(--accent-dark); }
+.btn-primary:active { transform: translateY(1px); }
+.btn-primary[data-tone="warn"] { background: var(--warn); }
+.btn-primary[data-tone="warn"]:hover { background: #9a4708; }
+
+/* ---------- 布局 ---------- */
+.layout {
+  display: grid;
+  grid-template-columns: 272px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.side {
+  position: sticky;
+  top: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: calc(100vh - 104px);
+  overflow-y: auto;
+  padding-right: 2px;
+}
+.side::-webkit-scrollbar { width: 8px; }
+.side::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: var(--shadow-panel);
+}
+.card-title {
+  margin: 0 0 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.kv { display: grid; grid-template-columns: 68px minmax(0, 1fr); gap: 4px 10px; font-size: 12.5px; }
+.kv dt { color: var(--text-3); }
+.kv dd { margin: 0; color: var(--text); overflow-wrap: anywhere; }
+.kv dd.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11.5px; }
+
+.preset-name { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
+.preset-desc { margin: 0 0 10px; font-size: 12.5px; color: var(--text-2); line-height: 1.55; }
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.pill-ok { background: var(--ok-bg); color: var(--ok); }
+.pill-warn { background: var(--warn-bg); color: var(--warn); }
+.pill-danger { background: var(--danger-bg); color: var(--danger); }
+.pill-mute { background: var(--panel-2); color: var(--text-2); border: 1px solid var(--border); }
+
+.rows { display: flex; flex-direction: column; gap: 8px; font-size: 12.5px; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.row-label { color: var(--text-2); display: flex; align-items: center; gap: 6px; }
+.row-value { font-variant-numeric: tabular-nums; font-weight: 600; }
+.dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.dot-ok { background: var(--ok); }
+.dot-warn { background: var(--warn); }
+.dot-danger { background: var(--danger); }
+.dot-mute { background: var(--text-3); }
+
+.note {
+  margin: 10px 0 0;
+  padding: 9px 10px;
+  border-radius: 9px;
+  font-size: 12px;
+  line-height: 1.6;
+  background: var(--panel-2);
+  color: var(--text-2);
+}
+.note-warn { background: var(--warn-bg); color: var(--warn); }
+.note-danger { background: var(--danger-bg); color: var(--danger); }
+.note code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; }
+
+.steps { margin: 10px 0 0; padding: 0 0 0 18px; font-size: 12px; color: var(--text-2); line-height: 1.75; }
+.steps li { margin-bottom: 2px; }
+
+details.imgs { margin-top: 10px; font-size: 12px; }
+details.imgs > summary { cursor: pointer; color: var(--text-2); list-style: none; }
+details.imgs > summary::-webkit-details-marker { display: none; }
+details.imgs > summary::before { content: "▸ "; color: var(--text-3); }
+details.imgs[open] > summary::before { content: "▾ "; }
+.img-list { margin: 8px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 5px; }
+.img-list li { display: flex; gap: 6px; align-items: baseline; }
+.img-list .idx { color: var(--text-3); flex: none; font-variant-numeric: tabular-nums; }
+.img-list .src { color: var(--text-2); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; overflow-wrap: anywhere; }
+
+/* ---------- 预览区 ---------- */
+.main { min-width: 0; }
+
+.stage-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 0 2px;
+}
+.stage-title {
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.stage-meta { font-size: 12px; color: var(--text-3); white-space: nowrap; }
+
+.stage-scroll { padding: 2px 2px 32px; }
+
+.device {
+  width: 677px;
+  max-width: 100%;
+  margin: 0 auto;
+  transition: width 0.2s ease;
+}
+.device[data-device="mobile"] { width: 375px; }
+
+.canvas {
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: var(--shadow-canvas);
+  overflow: hidden;
+  transition: border-radius 0.2s ease, box-shadow 0.2s ease;
+}
+.device[data-device="mobile"] .canvas {
+  border-radius: 26px;
+  box-shadow: 0 0 0 9px #15161a, 0 0 0 11px #2b2d33, var(--shadow-canvas);
+}
+
+/* 文章容器：还原公众号阅读页的容器基线，其余样式完全由文章内联样式决定。
+   页边距只在手机端补 —— 两种模式的 .device 语义不同：
+     · 手机端 375px 模拟的是「视口」，微信在视口内还有 --appmsgPageGap(见 res.wx.qq.com
+       的 appmsg CSS，值为 20px) 的平台页边距，所以要补
+     · 电脑端 677px 模拟的是「公众号编辑器宽度」，微信那 20px 本来就在这 677px 之外，
+       在这里再补会把正文压到 637px，反而变窄
+   不补的后果：手机端正文贴到手机框边缘 —— 那不是模板的问题，是预览缺了平台页边距。 */
+.wx {
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: 17px;
+  line-height: 1.75;
+  color: #333333;
+  overflow-wrap: break-word;
+}
+.device[data-device="mobile"] .wx { padding: 0 20px; }
+.wx img { max-width: 100%; height: auto; }
+
+.stage-foot {
+  margin-top: 14px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-3);
+}
+.stage-foot kbd {
+  font-family: inherit;
+  font-size: 11px;
+  padding: 1px 5px;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: var(--panel);
+  color: var(--text-2);
+}
+
+/* ---------- Toast ---------- */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 36px;
+  transform: translate(-50%, 8px);
+  z-index: 50;
+  max-width: min(560px, calc(100vw - 40px));
+  padding: 11px 18px;
+  border-radius: 11px;
+  background: rgba(24, 26, 30, 0.94);
+  color: #ffffff;
+  font-size: 13px;
+  line-height: 1.5;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.toast[data-show="1"] { opacity: 1; transform: translate(-50%, 0); }
+.toast[data-tone="warn"] { background: rgba(180, 83, 9, 0.96); }
+.toast[data-tone="danger"] { background: rgba(180, 35, 24, 0.96); }
+
+/* 上传图片时的遮罩 + 进度条（点击「复制到公众号」后出现） */
+.busy {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(17, 24, 39, 0.42);
+  backdrop-filter: blur(1px);
+}
+.busy[hidden] { display: none; }
+.busy-card {
+  width: min(360px, 82vw);
+  padding: 20px 22px 18px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+  text-align: center;
+}
+.busy-title { margin: 0 0 12px; font-size: 15px; font-weight: 600; color: #111827; }
+.busy-bar {
+  height: 6px;
+  border-radius: 99px;
+  background: #eef0f3;
+  overflow: hidden;
+}
+.busy-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #2563eb, #38bdf8);
+  transition: width 0.25s ease;
+}
+.busy-note { margin: 12px 0 0; font-size: 12px; line-height: 1.6; color: #6b7280; }
+body[data-busy="1"] { cursor: progress; }
+body[data-busy="1"] #copy-btn { opacity: 0.6; pointer-events: none; }
+
+/* 顶栏的「复制时传图床」开关 */
+.host-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  height: 32px;
+  border: 1px solid var(--line, #e5e7eb);
+  border-radius: 8px;
+  font-size: 12px;
+  color: #374151;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.host-switch[hidden] { display: none; }
+.host-switch input { accent-color: #2563eb; margin: 0; }
+.host-switch:hover { background: rgba(37, 99, 235, 0.06); }
+
+@media (max-width: 1080px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .side { position: static; max-height: none; }
+  .device { width: 100%; }
+}

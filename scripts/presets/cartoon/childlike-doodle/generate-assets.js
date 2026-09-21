@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const SKILL_ROOT = path.resolve(__dirname, '../../..');
+const SKILL_ROOT = path.resolve(__dirname, '../../../..');
 const { svgToPngBuffer } = require(path.join(SKILL_ROOT, 'scripts/utils/svg-to-png'));
 
 const templatePath = path.join(__dirname, 'svg/number-template.svg');

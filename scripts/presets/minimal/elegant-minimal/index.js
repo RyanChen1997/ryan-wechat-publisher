@@ -1,3 +1,5 @@
+const { escapeHtml } = require('../../../utils/semantic-html');
+
 const STYLES = {
   // 夜间模式说明：页面/引用/代码背景改用微信 CSS 变量（--weui-BG-2 页面与卡片 / --weui-BG-3 代码），
   // fallback 为白天色；夜间自动变原生深色（#191919 / #404040），避免浅色块被反色成中灰马赛克。文字色保留（夜间由微信算法反白）。
@@ -84,6 +86,7 @@ const decorations = {
   },
 
   parseInline(text, S) {
+    text = escapeHtml(text);
     text = text.replace(/\*\*(.+?)\*\*/g,
       `<strong style="${S.strong}">$1</strong>`);
     text = text.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g,

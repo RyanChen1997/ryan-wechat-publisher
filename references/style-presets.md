@@ -21,11 +21,33 @@
 
 fallback 写当前白天色：本地预览、非微信环境显示的仍是原来的颜色，白天效果不变；夜间由微信客户端解析变量为原生深色，整篇只有 2~3 个统一灰阶，不再有马赛克。
 
-> 本地验证：渲染时加 `--output-dark-preview <路径>`（`scripts/utils/dark-preview.js`），生成模拟微信 mp-darkmode 算法的夜间预览页，发布前先在浏览器里检查。
+> 本地验证：在排版预览器（`04-html/studio.html`）里切右上角「夜间」直接看 —— 预览器的夜间模式就是按下面这个算法渲染的，不需要另开页面。
+> 只有在单独调预设、手上没有预览器时，才用 `node scripts/utils/dark-preview.js <预览.html> [输出.html]` 离线生成一张。
 
 ---
 
+## 分类总览
+
+模板按分类归档在 `scripts/presets/<分类 id>/<preset-id>/`。当前 7 套模板分布在 6 个分类里，「动漫」「文艺」「复古」「中国风」还没有模板（目录与分类桶已建好，画廊会自动隐藏它们，以后加了模板就自动出现）。
+
+| 分类 | 目录 | 套数 | 这一类的模板 |
+|------|------|------|--------------|
+| 商务 | `scripts/presets/business/` | 1 | 公众号蓝黄线框 |
+| 简约 | `scripts/presets/simple/` | 2 | 蓝点笔记、极客科技 |
+| 清新 | `scripts/presets/fresh/` | 1 | 蓝紫徽章 |
+| 卡通 | `scripts/presets/cartoon/` | 1 | 童趣手绘 |
+| 时尚 | `scripts/presets/fashion/` | 1 | 活力徽章 |
+| 极简 | `scripts/presets/minimal/` | 1 | 极简雅致 |
+| 动漫 | `scripts/presets/anime/` | 0 | （暂无模板，目录与分类桶已保留） |
+| 文艺 | `scripts/presets/literary/` | 0 | （暂无模板，目录与分类桶已保留） |
+| 复古 | `scripts/presets/retro/` | 0 | （暂无模板，目录与分类桶已保留） |
+| 中国风 | `scripts/presets/chinese/` | 0 | （暂无模板，目录与分类桶已保留） |
+
+分类的顺序、中文名与说明写在根注册器 `scripts/presets/index.js`（`CATEGORY_ORDER`）+ 各分类目录下的 `index.js`（分类桶）；画廊按这个顺序排列分类标签页，并直接复用分类说明作为标签的悬停提示。
+
 ## 预设列表
+
+下面 7 套是本 skill 的全部内置模板。括号里是 `preset-id`，圆括号后面是所属分类。
 
 ### 1. 蓝点笔记（blue-dot-notes）
 
@@ -232,15 +254,20 @@ fallback 写当前白天色：本地预览、非微信环境显示的仍是原�
 | 轻松科普/创作方法/手绘风 | 童趣手绘 | 三段式图片标题辨识度高，支持动态标题和多色高亮 |
 | 需要强视觉冲击力 | （复刻模式） | 找一篇喜欢的公众号文章直接复刻 |
 
+---
+
 ## 新增预设
 
 新增一个预设包只需：
 
-1. 在 `scripts/presets/` 下复制一个现有预设包（如 `blue-dot-notes/`）
+1. 先想好它属于哪个分类，在 `scripts/presets/<分类 id>/` 下复制一个现有预设包（如 `simple/blue-dot-notes/`）；拿不准就打 `node -e "const {listCategories}=require('./scripts/presets/index');for(const c of listCategories())console.log(c.id, c.name, c.description)"` 看分类说明
 2. 在新包的 `index.js` 中修改 `id`、`name`、`tagline`、`description`、`suitableFor`、`meta`
 3. 调整 `STYLES` 对象中的样式值
 4. 如果有特殊装饰，在 `decorations` 中自定义对应 `makeXxx` 函数；专属 SVG、PNG、GIF 放到包内的 `svg/` 或 `assets/`
-5. 在 `scripts/presets/index.js` 中注册包入口
-6. **夜间模式适配**（必做）：浅色块一律写 `var(--weui-BG-1/2/3, <白天色>)`，不写半透明白背景；`meta.darkMode` 标注适配方式；渲染时用 `--output-dark-preview` 检查夜间效果
+5. 在该分类的 `index.js`（分类桶）里加一行 `require('./<preset-id>/index')`，**按 preset-id 字母序插到对应位置**（不用改根 `index.js`）
+6. **夜间模式适配**（必做）：浅色块一律写 `var(--weui-BG-1/2/3, <白天色>)`，不写半透明白背景；`meta.darkMode` 标注适配方式；改完在预览器里切「夜间」检查效果
+7. 跑 `npm test` 回归：注册器会校验分类桶 id / 目录名 / `preset.id` 三者一致，分类目录下有未注册的包会直接报错
 
 大约 100-200 行代码即可完成一个新预设。
+
+要开一个新分类：在根注册器 `scripts/presets/index.js` 的 `CATEGORY_ORDER` 里加一个 id，建同名目录并放一个分类桶 `index.js`（哪怕 `presets: []`），画廊会自动把它排进标签页。

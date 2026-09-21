@@ -1,3 +1,5 @@
+const { escapeHtml } = require('../../../utils/semantic-html');
+
 const STYLES = {
   // 夜间模式说明：页面底色/色块用微信 CSS 变量（--weui-BG-1 页面 / --weui-BG-2 卡片 / --weui-BG-3 代码），
   // fallback 为白天色（本地预览可见）；夜间微信自动换成原生深色（#1E1E1E / #191919 / #404040），避免 mp-darkmode 反色算法把浅色块映射成深浅不一的中灰马赛克。
@@ -125,6 +127,7 @@ const decorations = {
   },
 
   parseInline(text, S) {
+    text = escapeHtml(text);
     // 微信不支持正文超链接（<a> 会被过滤成纯文字），链接改为「标题 + 小字 URL」两行纯文本展示
     text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<span style="color: rgb(62, 62, 62);">$1</span><br/><span style="color: rgb(98, 126, 160); font-size: 13px; word-break: break-all;">$2</span>');
     text = text.replace(/\*\*(.+?)\*\*/g, `<strong style="${S.strong}"><span style="${S.strong_span}">$1</span></strong>`);

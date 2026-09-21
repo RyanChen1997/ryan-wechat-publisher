@@ -9,7 +9,9 @@ import sys
 
 
 INLINE_LINK_RE = re.compile(r"\[(.*?)\]\((.*?)\)")
-DECORATION_BULLETS_RE = re.compile(r"[•●○■□▪➤►→▶◆✦✧★☆]")
+# 预设会引入原文没有的装饰字形（列表符号、标题前缀等），这些在语义比对时全局忽略。
+# 扩充时请同步更新 scripts/test_presets.js 的回归 case。
+DECORATION_BULLETS_RE = re.compile(r"[•●○■□▪▫◦‣∙➤►→▶▸◆◇■□✦✧★☆·—–\-]")
 
 
 def clean_inline(text):

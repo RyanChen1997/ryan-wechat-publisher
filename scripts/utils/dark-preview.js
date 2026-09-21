@@ -7,7 +7,7 @@
  *
  * 用法：
  *   node scripts/utils/dark-preview.js <article.html> [output.html]
- *   # 或经 render.js：node scripts/render.js ... --output-dark-preview <path>
+ *   # 或经预览器：右上角「夜间」开关（就是本模块的 simulateDark）
  *
  * 算法要点（与官方一致）：
  *   - 背景：白/近白（灰阶 L>40% 或感知亮度>250）→ 亮度取反至 #191919 附近；
@@ -253,7 +253,13 @@ function mapStyleValue(prop, value, bg) {
     const mix = mixGradient(v0);
     if (!mix) return { value: v0.replace(/\u0000(\d+)\u0000/g, (m, i) => resolved[+i]), bgColor: null };
     const mapped = mapBackground(mix.rgb, mix.alpha);
-    return { value: fmtRgb(mapped.rgb, mapped.alpha), bgColor: mapped };
+    const solid = fmtRgb(mapped.rgb, mapped.alpha);
+    // 官方做法（wechatjs/mp-darkmode sdk.js convertBg）：把**每一个色值**都替换成混合后的纯色，
+    // 保留渐变函数语法本身。所以 `linear-gradient(A,B)` → `linear-gradient(<mapped>,<mapped>)`，
+    // 视觉上退化成一个纯色底，但**声明依然是合法的渐变**。
+    // 旧实现把整个值塌缩成 `rgb(...)`，在 `background-image` 上属于非法值，
+    // 会被浏览器整条丢弃 —— 夜间预览里渐变底直接消失（与真机行为不一致）。
+    return { value: v0.replace(COLOR_RE, solid).replace(/\u0000(\d+)\u0000/g, (m, i) => resolved[+i]), bgColor: mapped };
   }
 
   const replaced = v0.replace(COLOR_RE, (match) => {
@@ -278,12 +284,28 @@ function mapStyleValue(prop, value, bg) {
 }
 
 // 解析 style 字符串，返回 [key, value] 列表
+//
+// 注意：不能直接 split(';')。style 值里的 HTML 实体本身带分号（&quot; &amp; &#39; …），
+// 直接切会把 `background-image: url(&quot;https://…&quot;)` 切成
+//   [..., `background-image: url(&quot`, `https://…&quot`, `)box-sizing…`]
+// 中间那段再被当成声明解析，就变成了 `https: //mmbiz…` —— URL 被写坏。
+// 所以先把实休保护成占位符，切完再还原。
+const ENTITY_RE = /&(?:[a-zA-Z][a-zA-Z0-9]*|#\d+|#x[0-9a-fA-F]+);/g;
+
 function parseStyle(styleStr) {
-  return styleStr.split(';')
+  const entities = [];
+  const shielded = styleStr.replace(ENTITY_RE, (entity) => {
+    entities.push(entity);
+    return `\u0001${entities.length - 1}\u0001`;
+  });
+
+  const restore = (s) => s.replace(/\u0001(\d+)\u0001/g, (m, i) => entities[+i]);
+
+  return shielded.split(';')
     .map(part => {
       const idx = part.indexOf(':');
       if (idx < 0) return null;
-      return [part.slice(0, idx).trim().toLowerCase(), part.slice(idx + 1).trim()];
+      return [restore(part.slice(0, idx).trim().toLowerCase()), restore(part.slice(idx + 1).trim())];
     })
     .filter(Boolean);
 }
@@ -292,21 +314,43 @@ function parseStyle(styleStr) {
 const TAG_RE = /<(\/?)([a-zA-Z][a-zA-Z0-9-]*)((?:[^>"']|"[^"]*"|'[^']*')*?)(\/?)>/g;
 const VOID_TAGS = new Set(['img', 'br', 'hr', 'input', 'meta', 'link', 'source', 'wbr']);
 
-// 提取 style 属性值。注意 style 值里可能含内嵌引号（如 font-family: "PingFang SC"），
-// 不能用 /style="([^"]*)"/ 直接匹配（会截断）。CSS 内嵌引号必然成对出现，
-// 因此属性闭合引号就是该引号字符的最后一次出现。
+// 提取 style 属性值。
+//
+// 两种真实情况互相矛盾，不能简单取“下一个引号”或“最后一个引号”：
+//
+//   A) style 值里含**未转义的内嵌引号**（非规范但微信文章里大量存在）：
+//        style="... font-family: "PingFang SC", system-ui"
+//      取“下一个引号”会在 `font-family: ` 后就截断，后面的声明全丢。
+//
+//   B) style 不是最后一个属性，且它是空值：
+//        <img style="" src="https://mmbiz.qpic.cn/...">
+//      取“最后一个引号”会把后续属性一起吞进来，解析后写成 `src="https: //mmbiz...`。
+//
+// 判据：一个引号能当“属性结束引号”，当且仅当它后面紧接的是
+//   - 标签结尾（attrs 里已无内容），或
+//   - 下一个属性（空白 + 属性名 + =）。
+// 否则它只是 style 值内部的内嵌引号，继续往后找。
+function findStyleEnd(attrs, start, quote) {
+  let idx = start;
+  for (;;) {
+    idx = attrs.indexOf(quote, idx);
+    if (idx < 0) return -1;
+    const rest = attrs.slice(idx + 1);
+    if (/^\s*$/.test(rest)) return idx;                                    // style 是最后一个属性
+    if (/^\s+[a-zA-Z_:][-a-zA-Z0-9_:.]*\s*=/.test(rest)) return idx;      // 后面跟下一个属性
+    idx += 1;                                                              // 内嵌引号，继续
+  }
+}
+
 function extractStyleAttr(attrs) {
   const styleIdx = attrs.indexOf('style=');
   if (styleIdx < 0) return null;
   const openQuote = attrs[styleIdx + 6];
   if (openQuote !== '"' && openQuote !== "'") return null;
-  const closeIdx = attrs.lastIndexOf(openQuote);
-  if (closeIdx <= styleIdx + 6) return null;
-  return {
-    start: styleIdx + 7,
-    end: closeIdx,
-    value: attrs.slice(styleIdx + 7, closeIdx),
-  };
+  const start = styleIdx + 7;
+  const end = findStyleEnd(attrs, start, openQuote);
+  if (end < 0) return null;
+  return { start, end, value: attrs.slice(start, end) };
 }
 
 function simulateDark(html) {

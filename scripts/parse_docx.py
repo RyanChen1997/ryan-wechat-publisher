@@ -3,12 +3,90 @@
 Word (.docx) → Markdown 解析。
 优先使用 mammoth（样式保留更好），没有则用 python-docx。
 
+文章标题会被移到 Markdown 的 frontmatter（`title:`），**不留在正文里** ——
+正文只从章节标题开始，草稿标题单独取 frontmatter 的 title。
+标题来源顺序：Word 的 Title 段落 → docx 核心属性 dc:title → 输入文件名。
+
 用法: python3 parse_docx.py <input.docx> <output.md> [--extract-images <图片输出目录>]
 """
 
 import sys
 import os
 import argparse
+import re
+import zipfile
+import xml.etree.ElementTree as ET
+
+W_NS = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
+DC_NS = '{http://purl.org/dc/elements/1.1/}'
+# Word 的 Title 样式（按样式名匹配，兼容中文 Word 的 `标题` 与各种 styleId）
+TITLE_STYLES = {'title', '标题'}
+
+
+def _style_names(archive):
+    """styleId → 样式名（小写），用于跨语言识别 Title 样式。"""
+    names = {}
+    try:
+        with archive.open('word/styles.xml') as stream:
+            root = ET.fromstring(stream.read())
+    except KeyError:
+        return names
+    for style in root.iter(f'{W_NS}style'):
+        style_id = style.get(f'{W_NS}styleId')
+        node = style.find(f'{W_NS}name')
+        if style_id and node is not None:
+            names[style_id] = (node.get(f'{W_NS}val') or '').strip().lower()
+    return names
+
+
+def detect_docx_title(docx_path):
+    """从 docx 里取文章标题：先找 Title 样式的段落，再退回核心属性 dc:title。
+
+    不依赖 python-docx / mammoth，直接用 zipfile 读 OOXML。
+    """
+    try:
+        with zipfile.ZipFile(docx_path) as archive:
+            with archive.open('word/document.xml') as stream:
+                root = ET.fromstring(stream.read())
+            names = _style_names(archive)
+            for para in root.iter(f'{W_NS}p'):
+                style = para.find(f'{W_NS}pPr/{W_NS}pStyle')
+                if style is None:
+                    continue
+                val = (style.get(f'{W_NS}val') or '').strip()
+                if names.get(val, val).lower() in TITLE_STYLES:
+                    text = ''.join(node.text or '' for node in para.iter(f'{W_NS}t')).strip()
+                    if text:
+                        return text
+            try:
+                with archive.open('docProps/core.xml') as stream:
+                    core = ET.fromstring(stream.read())
+                node = core.find(f'{DC_NS}title')
+                if node is not None and (node.text or '').strip():
+                    return node.text.strip()
+            except KeyError:
+                pass
+    except (zipfile.BadZipFile, KeyError, ET.ParseError):
+        pass
+    return None
+
+
+def move_title_to_frontmatter(md_path, title):
+    """把标题写进 frontmatter，并把正文里跟标题重复的那个 `#` 行摘掉。"""
+    with open(md_path, 'r', encoding='utf-8') as f:
+        lines = f.read().split('\n')
+
+    # 同一个标题可能被写成 `# 标题`，也可能是不带 # 的独立段落（取决于解析器样式映射）
+    pattern = re.compile(r'^#{0,6}\s*\**' + re.escape(title) + r'\**\s*$')
+    for index, line in enumerate(lines[:20]):
+        if pattern.match(line.strip()):
+            del lines[index]
+            break
+
+    body = '\n'.join(lines).strip('\n')
+    escaped = title.replace('\\', '\\\\').replace('"', '\\"')
+    with open(md_path, 'w', encoding='utf-8') as f:
+        f.write(f'---\ntitle: "{escaped}"\n---\n\n{body}\n')
 
 
 def parse_with_mammoth(docx_path, output_md_path, image_dir=None):
@@ -95,16 +173,24 @@ def parse_with_python_docx(docx_path, output_md_path, image_dir=None):
             lines.append('')
             continue
 
-        if style_name.startswith('Heading 1') or style_name == '标题 1' or style_name == 'Title':
+        if style_name in ('Title', '标题'):
             lines.append(f'# {text}')
+            lines.append('')
+        elif style_name.startswith('Heading 1') or style_name == '标题 1':
+            lines.append(f'# {text}')
+            lines.append('')
         elif style_name.startswith('Heading 2') or style_name == '标题 2':
             lines.append(f'## {text}')
+            lines.append('')
         elif style_name.startswith('Heading 3') or style_name == '标题 3':
             lines.append(f'### {text}')
+            lines.append('')
         elif style_name == 'Quote' or style_name == '引用':
             lines.append(f'> {text}')
+            lines.append('')
         elif style_name == 'List Paragraph' or style_name.startswith('List'):
             lines.append(f'- {text}')
+            lines.append('')
         else:
             runs_text = []
             for run in para.runs:
@@ -115,6 +201,8 @@ def parse_with_python_docx(docx_path, output_md_path, image_dir=None):
                     t = f'*{t}*'
                 runs_text.append(t)
             lines.append(''.join(runs_text))
+            # 段落之间必须留空行：Markdown 里相邻两行会被当成同一个段落
+            lines.append('')
 
     if image_dir:
         from docx.opc.constants import RELATIONSHIP_TYPE as RT
@@ -126,10 +214,12 @@ def parse_with_python_docx(docx_path, output_md_path, image_dir=None):
                 img_path = os.path.join(image_dir, img_name)
                 with open(img_path, 'wb') as f:
                     f.write(rel.target_part.blob)
-                lines.append(f'\n![[{img_name}]]\n')
+                lines.append(f'![[{img_name}]]')
 
+    # 空段落 / 连续分隔行统一压成单个空行
+    body = re.sub(r'\n{3,}', '\n\n', '\n'.join(lines)).strip('\n')
     with open(output_md_path, 'w', encoding='utf-8') as f:
-        f.write('\n'.join(lines))
+        f.write(body + '\n')
 
     print(f"解析完成（python-docx）: {output_md_path}")
     if image_dir:
@@ -159,6 +249,10 @@ def main():
     if not ok:
         print("解析失败", file=sys.stderr)
         sys.exit(1)
+
+    title = detect_docx_title(args.input) or os.path.splitext(os.path.basename(args.input))[0]
+    move_title_to_frontmatter(args.output, title)
+    print(f"文章标题: {title}（已写入 frontmatter，不在正文里）")
 
 
 if __name__ == '__main__':

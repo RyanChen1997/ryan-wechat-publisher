@@ -1,6 +1,6 @@
 # 工作流详细操作指南
 
-本文件是 SKILL.md 中 9 步工作流的详细展开。每一步包含：做什么、用什么命令、输出什么、交互格式要求。
+本文件是 SKILL.md 中 6 步工作流的详细展开。每一步包含：做什么、用什么命令、输出什么、交互格式要求。
 
 ---
 
@@ -10,61 +10,39 @@
 
 **操作**：
 
-- **Markdown (.md)**：直接读取文件内容，识别 frontmatter、标题层级、图片
-- **Word (.docx)**：用 `scripts/parse_docx.py` 转成结构化 md
+- **Word (.docx)**：用 `scripts/parse_docx.py` 转成结构化 md（会自动把文章标题写进 frontmatter `title:`，不进正文）
   ```bash
   python3 scripts/parse_docx.py <输入.docx> 01-input/source.md --extract-images 01-input/images/
   ```
+- **Markdown (.md)**：直接读取文件内容，识别 frontmatter、标题层级、图片；标题不在 frontmatter 里的，在 `01-input/source.md` 顶部补一段
+  ```yaml
+  ---
+  title: "文章标题"
+  ---
+  ```
 
-**输出**：`01-input/source.md`
-
-**结构判断** `hasClearStructure`：
-- 有 ≥ 2 个 `##` 二级标题 → true
-- 否则 → false
+**输出**：`01-input/source.md`（frontmatter `title:` = 文章标题；正文从章节标题开始）
 
 ---
 
-## 第 2 步：标题框架建议
+## 第 2 步：结构确认
 
-### hasClearStructure = true
+**这一步的产出是一份梳理好的层级结构，不是照抄原文。** 分三种情况处理：
 
-直接从 source.md 提取标题层级，用引用块格式展示：
+| 原文情况 | 做法 |
+|----------|------|
+| 层级清晰、层级一致 | 直接把标题层级翻译成 `1.` / `1.1` 编号 |
+| 层级混乱（拿 `#` 当总标题、层级不统一等） | 归一成一致的层级，段落文字不动 |
+| 完全没有标题（纯段落长文） | 读完全文，**总结出一套合理的 h1/h2/h3 层级**，段落文字不动 |
 
-**标题框架确认**
+文章标题单独识别（Word 的 Title 段落 / frontmatter title / 用户指定的标题），**不当作正文的第一个章节**。
 
-> **# 第一章：xxx**
-> 
-> **# 第二章：xxx**
-> 
-> ## 2.1 xxx
-> ## 2.2 xxx
-> 
-> **# 第三章：xxx**
+要发给用户的确认消息有固定文案，见 `references/confirmation-dialogs.md`「节点 1」—— **逐字照那个格式写**，不要自行加内容。
 
-共 N 个一级章节，第 M 章含 K 个二级小节。确认这个结构就继续，有调整直接说。
-
-确认后保存到 `02-structured/structured.md`。
-
-### hasClearStructure = false
-
-让 LLM 根据文章内容生成标题大纲，用引用块格式展示：
-
-**标题框架确认**
-
-> **# 第一章：xxx**
-> 
-> **# 第二章：xxx**
-> 
-> ## 2.1 xxx
-> ## 2.2 xxx
-> 
-> **# 第三章：xxx**
-
-共 N 个一级章节，第 M 章含 K 个二级小节。确认这个结构就继续，有调整直接说。
-
-> [!important] 结构说明
-> 正文从 `#` 一级标题开始，每个 `#` 是一个章节。模板的最强标题样式（如徽章、丝带等）会应用在 `#` 上。
-> 公众号草稿的标题（title 字段）取第一个 `#` 的文本，也可以由用户另行指定。
+> [!important] 结构规则
+> - 正文从第一个章节标题（`#`）开始，模板最强标题样式（徽章、丝带等）应用在 `#` 上
+> - 文章标题（草稿 title）写在 `02-structured/structured.md` 的 frontmatter `title:` 里，不进正文
+> - 结构可以调，**段落文字一个字不能动**
 
 用户可以：接受 / 修改 / 拒绝（保持原样）。
 
@@ -75,264 +53,205 @@
 
 ---
 
-## 第 3 步：排版风格选择
+## 第 3 步：模板推荐（画廊）
 
-判断用户意图：
+用户已经确认文章结构之后，不要用文字表格让用户猜风格 —— 直接生成画廊页给他看效果。
+
+### 3a. 判断用户意图
 
 | 用户输入 | 处理方式 |
 |---------|---------|
-| 指定了预设名称 | 直接用对应 preset |
-| 说"复刻 XX 文章" + 给了 URL | 走复刻流程（见 `clone-guide.md`） |
-| 没说风格 | 推荐所有内置预设 |
+| 直接指定了预设名（如"用极简雅致"） | 跳过画廊，直接用对应 preset，进第 4 步（第 4 步依然要向用户确认） |
+| 没说风格 | 选 3 套适合该文章的预设 → 生成画廊 → 用户选 |
+| 发来其他公众号文章链接，要求"照着排" | 本 skill 不复刻外部模板，改成从内置预设里推相近的 3 套 |
 
-**输出格式：**
+### 3b. 挑 3 套推荐（第一个 = 最推荐，画廊默认展示它）
 
-**第 3 步：排版风格选择**
+按文章类型选，参考各预设的 `suitableFor`：
 
-| ID | 名称 | 描述 | 适合场景 |
-|----|------|------|----------|
-| blue-dot-notes | 蓝点笔记 | 清爽蓝白配色，蓝色圆点装饰一级标题，简约克制 | 职场干货、方法论、科技科普、效率提升 |
-| purple-badge | 蓝紫徽章 | 蓝紫主色，数字徽章 SVG 装饰，现代清新有呼吸感 | 成长感悟、心理情感、生活方式、个人提升 |
-| elegant-minimal | 极简雅致 | 灰白极简，双圆点标题装饰，大行距两端对齐，雅致克制 | 设计美学、成长感悟、知识分享、职场思考 |
-| vibrant-badge | 活力徽章 | 蓝橙撞色，PART 倾斜徽章 + 卡片式排版，活泼有设计感 | 职场干货、效率工具、方法论、成长感悟 |
-| geek-tech | 极客科技 | 蓝色数字编号 + 黄色装饰条 + 居中标题，科技媒体风 | 科技资讯、职场干货、行业分析、AI 工具 |
-| wechat-blue-yellow | 公众号蓝黄线框 | 浅蓝灰底 + 引言虚线框 + 每个章节独立成框，深蓝标题块黄边条居中 | AI 工具、科技科普、职场干货、方法论 |
-| childlike-doodle | 童趣手绘 | 动态黄色干刷标题 + 手绘数字 1～10 + 顶部插画 + 四色高亮 | AI 工具、创作方法、轻松科普、自动化演示 |
+| ID | 名称 | 适合场景 |
+|----|------|----------|
+| blue-dot-notes | 蓝点笔记 | 职场干货、方法论、科技科普、效率提升 |
+| purple-badge | 蓝紫徽章 | 成长感悟、心理情感、生活方式、个人提升 |
+| elegant-minimal | 极简雅致 | 设计美学、成长感悟、知识分享、职场思考 |
+| vibrant-badge | 活力徽章 | 职场干货、效率工具、方法论、成长感悟 |
+| geek-tech | 极客科技 | 科技资讯、职场干货、行业分析、AI 工具 |
+| wechat-blue-yellow | 公众号蓝黄线框 | AI 工具、科技科普、职场干货、方法论 |
+| childlike-doodle | 童趣手绘 | AI 工具、创作方法、轻松科普、自动化演示 |
 
-你的文章是 [类型] 类型，推荐 **xxx** 或 **xxx**。选哪个？或者有想复刻的公众号文章也可以发链接。
+三个尽量选风格差异大的（比如「章节独立框 / 极简 / 徽章」），**最好来自不同分类**（脚本会在 3 套全落在同一个分类时给出提示），方便用户一眼分辨；其余模板会按分类出现在画廊的「按分类浏览」里，用户想选哪个都行。默认三套是 `wechat-blue-yellow,elegant-minimal,purple-badge`（分属商务 / 极简 / 清新）。
 
-预设列表和详细说明见 `references/style-presets.md`。
+不确定某套属于哪个分类、或想看全部分类时：
+
+```bash
+node -e "const {listCategories}=require('./scripts/presets/index');for(const c of listCategories({nonEmptyOnly:true}))console.log(c.name, c.count+' 套：', c.presets.join(', '))"
+```
+
+### 3c. 生成并打开画廊
+
+```bash
+node scripts/build-gallery.js \
+  --presets <最推荐>,<备选1>,<备选2> \
+  --workdir <任务工作目录> \
+  --open
+```
+
+**画廊固定用 skill 内置的示例文章渲染**（`assets/gallery/article.md` —— 你手上那篇用户文章只用于后续排版，不往画廊里套）：所有模板渲染同一篇文章才能公平对比，而且示例文章有配图、篇幅适中，不会让画廊加载变慢。脚本不支持换文章。
+
+画廊页固定用**手机版白天效果**：顶部「为你推荐」列出你挑的 3 套（第 1 套带「最推荐」徽章且默认展示，三张卡片上标了各自所属分类），下面是「按分类浏览」 —— 分类标签页带套数（如「简约 2」），默认「全部」按分类分组列出所有模板，点标签切到单个分类，**没有模板的分类（动漫 / 文艺 / 复古 / 中国风）不会出现**；中间是手机预览，底部悬浮一个「复制「模板名」」按钮。
+
+### 3d. 回收用户的选择
+
+画廊打开后，按 `references/confirmation-dialogs.md`「节点 2」发推荐消息（文案已定稿，逐字照写），再等用户回话。
+
+用户点完按钮会把模板名（如「极简雅致」）粘回来。无论选的是推荐位里的，还是在某个分类里翻到的，都把它映射回预设 ID：
+
+```bash
+node -e "const {PRESETS}=require('./scripts/presets/index');for(const p of Object.values(PRESETS))console.log(p.name, '=>', p.id, '['+p.categoryName+']')"
+```
+
+然后接第 4 步的排版方案确认。用户如果都不满意，换一批预设重新生成画廊即可。
+
+预设的详细风格说明见 `references/style-presets.md`。
 
 ---
 
 ## 第 4 步：排版方案确认
 
-用表格 + 引用块格式展示：
+用户已经选完模板。这一步把**已确认的模板 + 标题层级映射 + 文章结构**摆在一起做最后一次核对 —— 结构确认（第 2 步）和模板选择（第 3 步）隔了好几轮交互，一次把两样都摆出来，避免"选的模板跟文章结构不匹配"这种返工。
 
-**第 2 步确认：排版方案**
+要发给用户的消息有固定文案，见 `references/confirmation-dialogs.md`「节点 3」—— **逐字照那个格式写**，不要自行加内容（不写预设 ID、不写 `heading-offset` 数值、不重复文章标题和图片数）。
 
-| ID | 名称 | 描述 | 适合场景 |
-|----|------|------|----------|
-| purple-badge | 蓝紫徽章 | 蓝紫主色，数字徽章 SVG 装饰，现代清新有呼吸感 | 成长感悟、心理情感、生活方式、个人提升 |
+### 标题层级映射说明（内部判断，不写进消息）
 
-**标题层级映射：** heading-offset = **0**（`#` 用 h1 徽章样式，`##` 用 h2 样式）
+模板视觉最强的标题样式（如徽章、丝带）通常在 h1 上。正文从 `#` 章节标题开始，默认 heading-offset = 0 即可，最强样式直接应用在每个章节标题上。
 
-**文章结构：**
+如果文章的主要章节用的是 `##`（`#` 被占作标题层），就设 `heading-offset = -1`（整体升一级），让 `##` 用上模板最强的 h1 样式。发消息时把它写成大白话（`升一级（## 套用模板的主标题样式）`），不要写数值。
 
-> **# 第一章：xxx**
-> 
-> **# 第二章：xxx**
-> 
-> ## 2.1 xxx
-> ## 2.2 xxx
-> 
-> **# 第三章：xxx**
-
-确认就开始生成 HTML，有调整直接说。
-
-### 标题层级映射说明
-
-模板视觉最强的标题样式（如徽章、丝带）通常在 h1 上。文章从 `#` 一级标题开始，默认 heading-offset = 0 即可，最强样式直接应用在每个章节标题上。
-
-如果文章主要章节用的是 `##`（二级标题）而你希望它们用模板最强的 h1 样式，就设置 `heading-offset = -1`（整体升一级）。
-
-用户确认后，把选定的风格信息和 heading-offset 保存到 `03-style/selected-preset.json`。
+用户确认后，把预设 ID 和 heading-offset 保存到 `03-style/selected-preset.json`，再进第 5 步。
 
 ---
 
-## 第 5 步：生成 HTML
+## 第 5 步：渲染 + 校验
 
-调用 `scripts/render.js`：
+一条命令同时产出发布版 HTML、普通预览页和**排版预览器**，并**自动跑完三门校验**：
 
 ```bash
-node scripts/render.js \
+node scripts/preview-studio.js \
   --md 02-structured/structured.md \
   --preset <preset-id 或 preset 文件路径> \
   --heading-offset <偏移量> \
-  --output-body 04-html/article-body.html \
-  --output-preview 04-html/article-preview.html \
-  --output-dark-preview 04-html/article-dark-preview.html \
+  --workdir <任务工作目录> \
   --title "文章标题" \
-  --asset-output-dir 04-html/assets \
-  --asset-url-prefix assets \
-  --asset-dir 02-structured/
+  --asset-dir 02-structured/ \
+  --asset-dir 01-input/images
 ```
 
 **输出**：
+
+- `04-html/studio.html` — 排版预览器（自包含单文件，含白天/夜间两套渲染 + 复制到公众号）
 - `04-html/article-body.html` — 发布版（图片用 `data-src`，微信懒加载规范）
-- `04-html/article-preview.html` — 预览版（完整 HTML 文档，图片用本地路径 `src`）
-- `04-html/article-dark-preview.html` — 夜间预览版（按微信 mp-darkmode 算法模拟夜间映射）
+- `04-html/article-preview.html` — 普通预览页（无交互，可用于手动复制）
+- `04-html/assets/` — 动态生成的 PNG 装饰图
+- `05-validation/*.log` — 三门校验日志
+
+**不要在这里加 `--open`** —— 校验通过后，第 6 步才打开浏览器。
+
+### 图片怎么进公众号（二选一）
+
+复制内容始终以**内联 base64** 打底（保证任何情况下粘贴都有图），同时内置一份「复制时上传图床」的清单，**默认开启**：
+
+| 用户操作 | 复制内容里的图片 |
+|----------|------------------|
+| 直接点「复制到公众号」（顶栏开关默认勾选） | `https://litter.catbox.moe/xxx.png` |
+| 关掉顶栏「复制时传图床」再点 | `data:image/...;base64,...` |
+
+细节：
+
+- **不需要加任何参数**：默认就是图床 + 内联两条路都在，用户在预览器里切；`--no-image-host` 可以整个关掉（页面不带图床清单）
+- **上传时机：用户在第 6 步点「复制到公众号」那一刻**，由浏览器直传图床（Litterbox 上传接口允许跨域且不触发预检）。没点复制就完全没有网络请求
+- 点击后预览器弹遮罩 + 进度条（`3 / 7 张`），传完自动把内联 base64 换成 https 链接再写剪贴板；**单张失败就保留内联，图不会丢**
+- 链接**最长 72 小时失效**，必须在过期前点发布（微信发布时会把图转存到自己服务器）；控制台和侧栏都会提醒
+- 想把部分小图留在内联：`--image-host-min-size 200`（KB，只有不小于它的图才上传）
+
+### 5a. 校验门（命令自带，不需要手动跑）
+
+渲染完成后，脚本会依次跑三门校验并打印结果：
+
+```text
+校验门（内容一致性 / 微信兼容 / 图片存在性）
+  ✓ 内容一致性  MATCH
+  ✓ 微信兼容  PASS
+  ✓ 图片存在性  PASS
+  日志目录: <workdir>/05-validation
+校验门: 3/3 通过
+```
+
+| 门 | 脚本 | 通过标准 | 日志 |
+|----|------|----------|------|
+| 1. 内容一致性 | `scripts/compare_visible_text.py` | 输出 `MATCH`（语义比较，预设装饰文字不计） | `05-validation/text-compare.log` |
+| 2. 微信兼容 | `scripts/validate_wechat_html.py` | 输出 `PASS` | `05-validation/wechat-compat.log` |
+| 3. 图片存在性 | `scripts/check_images.py` | 输出 `PASS` | `05-validation/images-check.log` |
+
+- **任一门未通过 → 命令 `exit 1`，并且不会打开浏览器。** 先按日志修问题，再重跑同一条命令（渲染 + 校验会一起重来），不要带着失败结果进第 6 步。
+- 图片存在性失败通常是 `--asset-dir` 漏了目录：wikilink 图片在文章目录的子目录里（如 `图片素材/`）时，用多个 `--asset-dir` 全部列出来。
+- `validate_wechat_html.py` 除了 PASS/FAIL，还会输出两类**不阻断**的告警：夜间模式体检（浅色块过多、半透明背景）、本地图片引用提醒。告警要在第 6 步让用户确认时一并留意。
+- 只有脚本化批处理（不需要用户看结果）时，才用 `--no-validate` 关掉校验门；**不要用它跳过用户的稿子**。
+
+### 5b. 单独复跑某一门（正常流程不需要）
+
+```bash
+python3 scripts/compare_visible_text.py 02-structured/structured.md 04-html/article-body.html
+python3 scripts/validate_wechat_html.py 04-html/article-body.html
+python3 scripts/check_images.py 04-html/article-body.html --asset-dir 04-html/assets --asset-dir 02-structured/ --url-prefix assets
+```
+
+### 5c. 只想要 HTML（不带预览器）
+
+比如脚本化批量处理时，可以单独用 `scripts/render.js`；日常流程不要用它 —— 预览器已经包含白天/夜间两套渲染，**不要再额外生成或打开单独的夜间预览页**。
 
 ---
 
-## 第 6 步：校验
+## 第 6 步：打开浏览器 studio ← 第 3 道门
 
-### 6a. 内容一致性校验
-
-```bash
-python3 scripts/compare_visible_text.py \
-  02-structured/structured.md \
-  04-html/article-body.html \
-  > 05-validation/text-compare.log 2>&1
-```
-
-要求输出包含 `MATCH` 才算通过。
-（frontmatter 导致的首行不匹配是已知 artifact，其余行一致即可。）
-
-### 6b. 微信兼容校验
-
-用校验脚本：
+打开上一步生成的预览器：
 
 ```bash
-python3 scripts/validate_wechat_html.py \
-  04-html/article-body.html \
-  > 05-validation/wechat-compat.log 2>&1
+open 04-html/studio.html          # macOS；Linux 用 xdg-open，Windows 直接双击
 ```
 
-要求输出 `PASS`。
+（也可以在重新渲染时加 `--open` 让它自己打开 —— 校验通过才会真的打开。）
 
-也可以用 grep 手动检查：
-- 黑名单标签：`<style>`, `<script>`, `<iframe>`, `<form>`, `<!-- -->` 等
-- 黑名单 CSS：`position: fixed`, `position: sticky`, `float`, `z-index`, `filter` 等
-  - 注意：`position: relative` 和 `position: absolute` 用于列表圆点等简单定位是允许的，也是预设内建的用法
+> [!important] `studio.html` 就是「浏览器 studio」，只有这一个页面
+> 生成 studio.html（第 5 步）和打开它（第 6 步）是同一条链的两端，没有第二个预览页面。
+> 白天/夜间、电脑端/手机端都在这个页面里切换，**不要再额外生成或打开 `article-dark-preview.html` 这类单独的夜间预览页** —— 那是预览器出现之前的旧做法，已经废弃。
 
-### 6c. 图片存在性校验
+**预览器里能做什么**：
 
-```bash
-python3 scripts/check_images.py \
-  04-html/article-body.html \
-  --asset-dir 04-html/assets \
-  --asset-dir 02-structured/ \
-  --url-prefix assets \
-  > 05-validation/images-check.log 2>&1
-```
+| 功能 | 说明 |
+|------|------|
+| 电脑端 / 手机端 | 677px（公众号编辑器宽度）↔ 375px（手机屏）| 
+| 白天 / 夜间 | 夜间是 mp-darkmode 算法模拟结果，与真机一致 |
+| 复制到公众号 | 把整篇内联样式复制进剪贴板，粘进公众号编辑器不掉样式 |
+| 侧栏 | 当前模板、图片状态、夜间体检、复制准备度 |
 
-要求输出 `PASS`。
+**必须让用户确认白天和夜间都看过**（尤其引用块、代码块、色块多的文章）。要发给用户的消息有固定文案，见 `references/confirmation-dialogs.md`「节点 4」—— 逐字照写，不要自行加内容；用户说「可以 / 确认 / 没问题 / 发吧」后才算走完这一步。
 
-**作用**：发布版 HTML 中图片用的是原始文件名（`data-src`），此门禁确认所有图片都能在指定目录中找到，避免发出去后图裂。
-如果 wikilink 图片在文章目录的子目录里（如 `图片素材/`），需要用多个 `--asset-dir` 全部列出来。
+用户提出修改、我们重新渲染完并重开预览器后，**重发同一条消息**。
 
-校验日志全部保存到 `05-validation/`。
+### 发布 = 复制到公众号
 
----
+- 复制的是**发布版**内容，与当前白天/夜间、电脑/手机开关无关
+- 图片按第 5 步选的方案进复制内容：**内联 base64**（默认）或**图床 https 链接**（`--image-host litterbox`，点击时上传）。两种路径下，微信最终都会把图转存到自己的 CDN，地址会变成 `mmbiz.qpic.cn` —— **不需要云托管服务、不需要自建图床、也不需要手动传图**
+- 用图床时（默认）：点「复制到公众号」→ 遮罩里显示上传进度 → 传完自动复制并提示；链接 72 小时后失效，**必须提醒用户在到期前发布**；用户也可以关掉顶栏开关改用内联
+- 用户操作：预览器点「复制到公众号」→ 公众号编辑器新建图文 → 正文区粘贴（⌘V）→ 补标题、封面 → 存草稿
+- 浏览器拦截剪贴板时，预览器会自动帮你选中正文，按 ⌘C 即可；也可以让用户改用 Chrome/Edge 打开
+- 想要关掉内联（比如已经自己准备好转发用的公网图片）用 `--no-inline-images`；这时图片地址必须能公网访问，否则粘贴后会裂图
 
-## 第 7 步：本地预览 ← 第 3 道门
+### 用户要求修改时的回路
 
-```bash
-open 04-html/article-preview.html
-open 04-html/article-dark-preview.html   # 夜间模式预览（模拟微信 mp-darkmode 算法）
-```
+- 小调整（改颜色、字号、间距等）→ 修改 preset 样式 → 回到第 5 步重新渲染 + 校验
+- 换风格 → 回到第 3 步（画廊）或第 4 步（直接指定预设）
+- 改内容结构 → 回到第 2 步，更新 `02-structured/structured.md`
 
-在用户默认浏览器打开预览。渲染时生成夜间预览：
-
-```bash
-node scripts/render.js --md 02-structured/structured.md --preset <预设ID> \
-  --output-preview 04-html/article-preview.html \
-  --output-dark-preview 04-html/article-dark-preview.html
-```
-
-**必须确认白天和夜间两个预览都打开检查**（尤其引用块、代码块、色块多的文章），用户明确说"可以/确认/发吧"后才能继续。
-
-如果用户要求修改：
-- 小调整（改颜色、字号、间距等）→ 修改 preset 样式 → 回到第 5 步重新生成
-- 换风格 → 回到第 3 步
-- 改内容结构 → 回到第 2 步，更新 structured.md
-
-**注意**：只要 HTML 内容改过，就要重新走第 6 步校验。
-
----
-
-## 第 8 步：图片上传 + 创建草稿
-
-### 前置检查：WECHAT_PUBLISHER_URL
-
-检查环境变量：
-
-```bash
-echo $WECHAT_PUBLISHER_URL
-```
-
-**已设置** → 继续发布。
-
-**未设置** → 按以下两步处理：
-
-**第一步：发送部署文档**
-
-先告知用户需要部署微信云托管服务，并发送部署指南链接：
-
-> 需要先部署微信云托管服务才能发布到公众号草稿箱。请跟着这份文档操作：
-> 
-> https://my.feishu.cn/wiki/IlYkwcmmIis0UXkNTLlcbcwsnMf?from=from_copylink
-> 
-> 部署完成后，把服务域名（类似 `https://xxx.sh.run.tcloudbase.com`）发给我，我帮你配置好，以后就不用再配了。
-
-**第二步：获取域名并配置**
-
-用户提供域名后，执行以下操作：
-
-1. 验证域名可访问：
-   ```bash
-   curl -s <用户提供的域名>/health
-   ```
-   返回 `ok` 即为正常。
-
-2. 写入 shell 配置文件（持久化，下次不用再配）：
-   - 检查用户用的是什么 shell（`echo $SHELL`）
-   - zsh → 追加到 `~/.zshrc`
-   - bash → 追加到 `~/.bash_profile` 或 `~/.bashrc`
-
-   追加内容：
-   ```
-   export WECHAT_PUBLISHER_URL=<用户提供的域名>
-   ```
-
-3. 同时 `export` 到当前 shell 环境，立即生效。
-
-4. 告知用户：已配置完成，以后发布文章不需要再提供域名。
-
-> 配置完成，以后发布文章不需要再提供域名了。
-
-### 一条龙发布
-
-```bash
-python3 scripts/upload_and_publish.py \
-  --html 04-html/article-body.html \
-  --title "文章标题" \
-  --cover /path/to/cover.jpg \
-  --digest "摘要（≤120字）" \
-  --author "作者" \
-  --article-dir 04-html/ \
-  --asset-dir 02-structured/ \
-  --output-dir 09-publish/
-```
-
-脚本内部自动完成：
-1. 扫描 HTML 中的本地图片路径
-2. 调用 `/api/image/upload` 批量上传内联图
-3. 替换 HTML 中本地路径为微信 mmbiz URL
-4. 上传封面图（调用 `/api/material/upload`）
-5. 调用 `/api/draft/create` 创建草稿
-
-**输出文件**：
-- `09-publish/images-uploaded.json` — 图片上传映射表（含失败列表）
-- `09-publish/final-content.html` — 替换完微信 URL 的最终 HTML
-- `09-publish/draft-result.json` — 草稿创建返回结果（含 media_id）
-
-常见错误码及处理见 `references/troubleshooting.md`。
-
-**发布失败自动重试机制**：
-
-如果上传图片或创建草稿时遇到 5xx / 连接错误（云托管冷启动很常见）：
-1. 先探测 `${WECHAT_PUBLISHER_URL}/health`
-2. 每 10 秒重试一次，最多 5 次
-3. 服务恢复后自动继续发布流程
-4. 5 次都失败再告知用户去检查云托管状态
-
----
-
-## 第 9 步：完成
-
-告知用户：
-- 草稿已创建成功（附上 media_id）
-- 去 **公众号后台 → 内容与互动 → 草稿箱** 预览并发布
-- API 不能直接发布，需要手动在后台点发布
+**注意**：只要 HTML 内容改过，就必须重新走第 5 步（渲染 + 三门校验），校验没过不要重开预览器；重开后按节点 4 重发同一条确认消息。

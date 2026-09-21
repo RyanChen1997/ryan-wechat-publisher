@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>__STUDIO_TITLE__</title>
+<style>
+/*__STUDIO_CSS__*/
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="bar-left">
+    <span class="bar-logo">公众号排版预览</span>
+    <span class="chip" id="preset-chip">—</span>
+  </div>
+  <div class="bar-right">
+    <div class="seg" role="group" aria-label="端模式">
+      <button class="seg-btn" type="button" data-device="desktop" aria-pressed="false">电脑端</button>
+      <button class="seg-btn" type="button" data-device="mobile" aria-pressed="true">手机端</button>
+    </div>
+    <div class="seg" role="group" aria-label="日夜模式">
+      <button class="seg-btn" type="button" data-mode="light">白天</button>
+      <button class="seg-btn" type="button" data-mode="dark">夜间</button>
+    </div>
+    <label class="host-switch" id="host-switch-wrap" title="勾选后，点「复制到公众号」时把图片传到临时图床，复制内容里换成 https 链接">
+      <input type="checkbox" id="host-switch">
+      <span>复制时传图床</span>
+    </label>
+    <button class="btn-primary" type="button" id="copy-btn">复制到公众号</button>
+  </div>
+</header>
+
+<div class="busy" id="busy" hidden aria-live="polite">
+  <div class="busy-card">
+    <p class="busy-title" id="busy-title">正在上传图片…</p>
+    <div class="busy-bar"><span class="busy-fill" id="busy-fill"></span></div>
+    <p class="busy-note" id="busy-note">上传完成后会自动复制到剪贴板，请不要关闭页面。</p>
+  </div>
+</div>
+
+<div class="layout">
+  <aside class="side" id="side"></aside>
+
+  <main class="main">
+    <div class="stage-head">
+      <span class="stage-title" id="stage-title">—</span>
+      <span class="stage-meta" id="stage-meta"></span>
+    </div>
+    <div class="stage-scroll">
+      <div class="device" id="device" data-device="mobile">
+        <div class="canvas" id="canvas">
+          <div class="wx" id="wx"></div>
+        </div>
+      </div>
+    </div>
+    <div class="stage-foot" id="stage-foot"></div>
+  </main>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>window.__STUDIO__ = __STUDIO_PAYLOAD__;</script>
+<script>
+/*__STUDIO_JS__*/
+</script>
+</body>
+</html>

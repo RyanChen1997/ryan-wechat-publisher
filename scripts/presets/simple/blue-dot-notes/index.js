@@ -1,3 +1,5 @@
+const { escapeHtml } = require('../../../utils/semantic-html');
+
 const STYLES = {
   outer: 'font-size: 15px; line-height: 1.93; box-sizing: border-box; font-style: normal; font-weight: 400; text-align: justify; color: rgb(62, 62, 62);',
 
@@ -107,6 +109,7 @@ const decorations = {
   },
 
   parseInline(text, S) {
+    text = escapeHtml(text);
     text = text.replace(/\*\*(.+?)\*\*/g,
       `<strong style="${S.strong}"><span style="${S.strong_span}">$1</span></strong>`);
     text = text.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g,

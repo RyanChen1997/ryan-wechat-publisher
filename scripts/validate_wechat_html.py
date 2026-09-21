@@ -122,6 +122,45 @@ def darkmode_warnings(content):
     return warnings
 
 
+_IMG_REF_RE = re.compile(r'<img\b[^>]*?\b(?:data-src|src)\s*=\s*(["\'])(.*?)\1', re.IGNORECASE | re.DOTALL)
+_CSS_URL_REF_RE = re.compile(r'url\(\s*(["\']?)([^"\')]+)\1\s*\)', re.IGNORECASE)
+
+
+def _is_remote_ref(ref):
+    return bool(re.match(r'^(?:https?:)?//|^data:|^about:|^#', ref.strip(), re.IGNORECASE))
+
+
+def image_ref_warnings(content):
+    """返回本地图片引用告警（不阻断 PASS/FAIL）。
+
+    发布版 HTML 里带着本地图片路径是正常的（复制到公众号时会内联成 base64），
+    但必须两类载体都覆盖：
+      1. <img src|data-src>
+      2. CSS background-image: url(...)  ← 历史上这一步会被漏掉，导致粘贴后装饰图丢图
+    所以这里把两类都扫出来，提醒去核对预览器的复制准备度。
+    """
+    img_refs, css_refs = [], []
+    for m in _IMG_REF_RE.finditer(content):
+        ref = m.group(2)
+        if ref and not _is_remote_ref(ref):
+            img_refs.append(ref)
+    for m in _CSS_URL_REF_RE.finditer(content):
+        ref = re.sub(r'^&(?:quot|#39|apos);|&(?:quot|#39|apos);$', '', m.group(2).strip())
+        if ref and not _is_remote_ref(ref):
+            css_refs.append(ref)
+
+    warnings = []
+    if img_refs:
+        warnings.append(
+            f"[图片] {len(img_refs)} 处本地图片引用在 <img> 上，复制到公众号时会内联成 base64")
+    if css_refs:
+        uniq = list(dict.fromkeys(css_refs))
+        warnings.append(
+            f"[图片] {len(css_refs)} 处本地装饰图写在 CSS background-image 里（{', '.join(uniq[:3])}{'…' if len(uniq) > 3 else ''}）"
+            f"——已支持自动内联，但必须跟 <img> 一起进复制内容")
+    return warnings
+
+
 def main():
     if len(sys.argv) < 2:
         print("用法: python3 validate_wechat_html.py <article.html>")
@@ -174,6 +213,14 @@ def main():
             print(w)
         if len(warnings) > 30:
             print(f"... 还有 {len(warnings) - 30} 条")
+
+    # 本地图片引用告警（不参与 PASS/FAIL）：提醒必须走上传步骤，且两类载体都在
+    img_warnings = image_ref_warnings(content)
+    if img_warnings:
+        print(f"---")
+        print(f"图片上传提醒 {len(img_warnings)} 条（不阻断）")
+        for w in img_warnings:
+            print(w)
 
     sys.exit(0 if not violations else 1)
 

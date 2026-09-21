@@ -49,8 +49,8 @@
    - 复杂装饰（标题徽章、植物装饰、丝带等图形）→ **先画 SVG，再用 `@resvg/resvg-js` 转 PNG**，发布时走图片上传流水线。详见下方"装饰图实现规范"
    - **列表圆点不要用 `<ul>/<li>` + `position: absolute`**，公众号会同时显示默认列表符号，样式错乱。统一用 `<section>` + 内联文字圆点（`•` 或 `·`）实现
 3. **补齐缺失元素**：模板里没有的元素（比如没有引用块、没有列表），用模板的主色和设计语言自行设计，保持风格一致
-4. **确认使用范围**：并入已有的排版方案确认，不增加额外确认轮次。通常推荐持久化到当前引用 Skill 的 `scripts/presets/<id>/`；若用户明确仅本次使用，则保存到任务目录 `03-style/clone-template/`。不要假设存在 `.skillman` 或其他运行环境副本
-5. **输出为 preset 包**：格式参考 `scripts/presets/vibrant-badge/index.js`（含装饰图的预设范例）；预设专属不可变素材放在同一目录的 `assets/` 或 `svg/` 下，运行时缓存不得写入 preset 包
+4. **确认使用范围与分类**：并入已有的排版方案确认，不增加额外确认轮次。持久化时放到 `scripts/presets/<分类 id>/<id>/` —— 分类选最贴合的一套（商务 / 简约 / 清新 / 卡通 / 时尚 / 极简 / 动漫 / 文艺 / 复古 / 中国风，分类说明见 `style-presets.md`「分类总览」），并在该分类的 `index.js`（分类桶）里按字母序加一行 `require`。若用户明确仅本次使用，则保存到任务目录 `03-style/clone-template/`。不要假设存在 `.skillman` 或其他运行环境副本
+5. **输出为 preset 包**：格式参考 `scripts/presets/fashion/vibrant-badge/index.js`（含装饰图的预设范例）；预设专属不可变素材放在同一目录的 `assets/` 或 `svg/` 下，运行时缓存不得写入 preset 包
 
 ---
 
@@ -58,13 +58,20 @@
 
 > [!important]
 > **公众号不支持 inline SVG 和 base64 SVG**，装饰图一律用 PNG 格式，通过图片上传机制注入。
+>
+> [!note]
+> 装饰图可以放在 `<img>` 里，也可以放在 CSS `background-image: url(...)` 里（标题背景条、徽章底图常用）。
+> 与图片引用相关的逻辑统一走 `scripts/utils/image-refs.js`，不要自己写只扫 `<img>` 的正则 ——
+> 历史上就是这样漏掉了背景装饰图，导致发布后裂图。
 
 ### 实现流程
 
 1. 在 preset 文件中用 SVG 字符串定义装饰图案（方便修改颜色、尺寸）
 2. 用 `DecoAssetManager`（`scripts/utils/svg-to-png.js`）管理 SVG → PNG 的转换和缓存
-3. 渲染时调用 `decoAssets.get(svgString, name, width)` 获取图片路径，像普通图片一样用 `<img data-src="...">` 引用
-4. 发布时装饰图和正文图片一起走 `upload_and_publish.py` 上传到微信素材库
+3. 渲染时调用 `decoAssets.get(svgString, name, width)` 获取图片路径。装饰图有两种引用载体，**两种都支持**：
+   - `<img data-src="...">` —— 独立成块的装饰图（左右图案边、大分隔图）
+   - `background-image: url('...')` —— 标题背景条 / 徽章底图 / 色块纹理等需要文字叠在图片上的场景
+4. 交付时装饰图和正文图片一起被预览器内联成 base64 进复制内容（`<img src|data-src>` 与 CSS `url(...)` 两类载体都要覆盖）
 
 ### DecoAssetManager 用法
 
@@ -108,6 +115,26 @@ const src = decoAssets.get(DECO_SVG, 'deco-name', 200); // 200 = 输出宽度(px
 - `data-semantic-text="..."`：用该值代表整个子树的正文语义，适用于图片标题
 - `data-semantic-role="heading-1"`：供视觉门禁定位关键元素
 - 不再使用 `display:none` 藏一份重复标题；隐藏文字可能被微信过滤，也会干扰复制和计数器
+
+### 什么时候需要显式标记？看装饰的粒度
+
+内容一致性校验（`scripts/semantic_compare.py`）对比「原文 Markdown 语义」与「渲染 HTML 语义」，**多一个字都算不一致**。两类装饰处理方式不同：
+
+| 粒度 | 例子 | 怎么做 |
+|---|---|---|
+| **字形级**（单个符号） | 列表符号 `• ● ▪ — ·`、标题前缀 `-` | **不用逐套标记**。`semantic_compare.py` 的 `DECORATION_BULLETS_RE` 会在比对前全局剔除。发现新字形时扩充这个白名单即可 |
+| **短语级**（整段/词组） | 编号徽章 `01`、栏目标签「栏目」、文末印章「未完」 | **必须**在承载元素上加 `data-role="decoration" aria-hidden="true"`。不能靠白名单 —— 把常用词加进白名单会掩盖真实的内容缺失 |
+
+标记短语级装饰时的两个要点：
+
+1. **优先标在已经存在的承载元素上**，不要为了标记而新增一层 wrapper —— 加 wrapper 会改变 DOM 结构，可能影响视觉与后续编辑。
+   校验器只要元素**自身**带 `data-role="decoration"` 或 `aria-hidden="true"` 就整棵跳过子树的文本收集。
+2. **标记不得改变渲染输出**。改完用「剔除新增属性后与原产物 `cmp`」证明逐字节一致（必要时再截图像素比对）。
+
+> [!warning]
+> 只有 `scripts/semantic_compare.py` 是真校验器。`scripts/compare_visible_text.py` 里虽有一个同名的旧 `extract_html_text`，
+> 但该文件在 `__main__` 时直接 `from semantic_compare import main` —— **改那个文件不起作用**。
+
 
 ---
 
@@ -155,18 +182,18 @@ node scripts/clone/build_visual_review.js \
 | 段落间距 | `margin-bottom` 数值接近，或空行法/margin 法匹配 |
 | 圆角大小 | `border-radius` 数值接近 |
 | 公众号规范 | 全部内联样式，无 class/style 标签，图片用 data-src |
-| 夜间模式 | 浅色块全部用 `var(--weui-BG-1/2/3, <白天色>)`，无半透明白背景；用 `--output-dark-preview` 检查夜间无马赛克（规则见 `style-presets.md`） |
+| 夜间模式 | 浅色块全部用 `var(--weui-BG-1/2/3, <白天色>)`，无半透明白背景；在预览器里切「夜间」检查无马赛克（规则见 `style-presets.md`） |
 
 ### L4：边界测试
 
 - 多标题测试：生成至少 4 个一级标题，看装饰/编号是否正确
 - 动态图片标题测试：至少覆盖 2、8、14、24 个中文字和两位数序号
 - 确定性测试：同一 preset 实例连续生成发布版/预览版并重复渲染，输出必须一致
-- 字体测试：运行 `node scripts/clone/check_svg_fonts.js scripts/presets/<id>`；system-fallback 必须逐项检查边界预览
+- 字体测试：运行 `node scripts/clone/check_svg_fonts.js scripts/presets/<分类 id>/<id>`；system-fallback 必须逐项检查边界预览
 - 长文本测试：超长文字段落换行、对齐是否正常
 - 空段落测试：连续空行会不会间距过大
 - 移动端预览：缩小到手机宽度（~375px），看装饰是否变形
-- **夜间模式测试**：`--output-dark-preview` 生成夜间预览，确认没有深浅不一的灰阶马赛克（模板里的浅色块是重点，复刻时不要 1:1 照搬浅色底，改用 `var(--weui-BG-2, ...)`）
+- **夜间模式测试**：在预览器里切「夜间」确认没有深浅不一的灰阶马赛克（单独调预设时可用 `node scripts/utils/dark-preview.js <预览.html>`；模板里的浅色块是重点，复刻时不要 1:1 照搬浅色底，改用 `var(--weui-BG-2, ...)`）
 
 ---
 

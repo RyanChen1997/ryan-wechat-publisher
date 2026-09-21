@@ -1,6 +1,6 @@
 const path = require('path');
-const { DecoAssetManager } = require('../../utils/svg-to-png');
-const { semanticAttributes } = require('../../utils/semantic-html');
+const { DecoAssetManager } = require('../../../utils/svg-to-png');
+const { semanticAttributes, escapeHtml } = require('../../../utils/semantic-html');
 
 const PRESET_DIR = __dirname;
 
@@ -180,6 +180,7 @@ const decorations = (() => {
     },
 
     parseInline(text, S) {
+      text = escapeHtml(text);
       // 链接：微信会过滤 <a>，转为「标题（URL）」纯文本展示
       text = text.replace(/\[(.+?)\]\((.+?)\)/g, '$1（$2）');
       text = text.replace(/\*\*(.+?)\*\*/g,

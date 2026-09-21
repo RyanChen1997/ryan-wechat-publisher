@@ -1,0 +1,261 @@
+/* ===========================================================================
+   模板推荐画廊样式
+   注意：任何规则都不应命中文章内容（#wx 内部），文章只由内联样式控制。
+   =========================================================================== */
+
+:root {
+  --bg: #f4f5f7;
+  --panel: #ffffff;
+  --panel-2: #fafbfc;
+  --border: #e5e7eb;
+  --text: #1f2328;
+  --text-2: #6b7280;
+  --text-3: #9aa3ad;
+  --accent: #07c160;
+  --accent-dark: #06ad56;
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-canvas: 0 2px 4px rgba(16, 24, 40, 0.06), 0 16px 40px rgba(16, 24, 40, 0.1);
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- 顶栏 ---------- */
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  height: 60px;
+  padding: 0 24px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+.bar-logo { font-size: 15px; font-weight: 600; align-self: center; }
+.bar-sub { font-size: 12.5px; color: var(--text-3); align-self: center; }
+
+/* ---------- 布局 ---------- */
+.layout {
+  display: grid;
+  grid-template-columns: 288px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px 24px 150px;
+}
+
+/* ---------- 左侧模板列表 ---------- */
+.rail {
+  position: sticky;
+  top: 84px;
+  max-height: calc(100vh - 108px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.rail::-webkit-scrollbar { width: 8px; }
+.rail::-webkit-scrollbar-thumb { background: #dcdfe4; border-radius: 8px; }
+.rail-title {
+  margin: 0 0 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.rail-title-sub { margin: 18px 0 10px; }
+.rail-group { display: flex; flex-direction: column; gap: 10px; }
+.rail-foot { margin: 16px 0 0; font-size: 12px; color: var(--text-3); }
+
+/* 分类筛选 */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.chip {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text-2);
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.chip:hover { border-color: #cfd4da; color: var(--text); }
+.chip[aria-pressed="true"] {
+  background: #eaf7f0;
+  border-color: var(--accent);
+  color: #16794c;
+  font-weight: 600;
+}
+.chip-count { font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.chip[aria-pressed="true"] .chip-count { color: #16794c; }
+.rail-sub {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 16px 2px 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  color: var(--text-3);
+}
+.rail-sub:first-child { margin-top: 0; }
+
+.card {
+  appearance: none;
+  display: block;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 13px 14px;
+  box-shadow: var(--shadow-card);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+  font: inherit;
+  color: inherit;
+}
+.card:hover { border-color: #cfd4da; transform: translateY(-1px); }
+.card[aria-pressed="true"] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(7, 193, 96, 0.12);
+}
+.card-plain { background: var(--panel-2); box-shadow: none; }
+.card-plain[aria-pressed="true"] { background: var(--panel); }
+.card-head { display: flex; align-items: center; gap: 8px; }
+.card-name { font-size: 15px; font-weight: 600; }
+.card-tagline { display: block; margin: 5px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--text-2); }
+.card-tags { display: block; margin: 8px 0 0; font-size: 11.5px; color: var(--text-3); }
+.card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 7px; }
+.card-cat {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.card-id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.badge {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #eaf7f0;
+  color: #16794c;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.badge-mute { background: var(--panel-2); color: var(--text-3); border: 1px solid var(--border); }
+
+/* ---------- 中间预览 ---------- */
+.stage { min-width: 0; }
+
+.device { width: 375px; margin: 0 auto; }
+.canvas {
+  background: #ffffff;
+  border-radius: 26px;
+  overflow: hidden;
+  box-shadow: 0 0 0 9px #15161a, 0 0 0 11px #2b2d33, var(--shadow-canvas);
+}
+
+/* 文章容器：还原公众号阅读页的容器基线，其余样式完全由文章内联样式决定。
+   padding 必须和微信一致 —— 微信的 .rich_media_area_primary 用
+   `padding: var(--richMediaAreaPrimaryPaddingTop) var(--appmsgPageGap) 0`，
+   而 `--appmsgPageGap: 20px`（见 res.wx.qq.com 的 appmsg CSS）。
+   容器不补这 20px，正文就会贴到手机框边缘 —— 那不是模板的问题，预览缺了平台自带的页边距。 */
+.wx {
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: 17px;
+  line-height: 1.75;
+  color: #333333;
+  overflow-wrap: break-word;
+  padding: 0 20px;
+}
+.wx img { max-width: 100%; height: auto; }
+
+.actions {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  z-index: 30;
+  width: min(400px, calc(100vw - 32px));
+  padding: 10px;
+  text-align: center;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 30px rgba(16, 24, 40, 0.14);
+}
+.btn {
+  appearance: none;
+  border: 0;
+  border-radius: 11px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 22px;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.15s ease, transform 0.05s ease;
+}
+.btn:hover { background: var(--accent-dark); }
+.btn:active { transform: translateY(1px); }
+.hint { margin: 8px 0 0; font-size: 12px; color: var(--text-3); }
+.pick-cat {
+  display: inline-block;
+  margin: 0 0 8px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #eaf7f0;
+  color: #16794c;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+/* ---------- Toast ---------- */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 36px;
+  transform: translate(-50%, 8px);
+  z-index: 50;
+  max-width: min(520px, calc(100vw - 40px));
+  padding: 11px 18px;
+  border-radius: 11px;
+  background: rgba(24, 26, 30, 0.94);
+  color: #fff;
+  font-size: 13px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.toast[data-show="1"] { opacity: 1; transform: translate(-50%, 0); }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .rail { position: static; }
+  .device { width: min(375px, 100%); }
+}

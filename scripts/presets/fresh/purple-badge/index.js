@@ -1,3 +1,5 @@
+const { escapeHtml } = require('../../../utils/semantic-html');
+
 const STYLES = {
   h1_wrapper: 'position: relative; margin: 30px 8px 20px; height: 70px;',
   h1_arc_bg: 'position: absolute; left: -8px; bottom: 0; width: 200px; height: 50px; background-color: rgba(105, 130, 250, 0.12); border-radius: 100px 100px 0 0;',
@@ -116,6 +118,7 @@ const decorations = {
   },
 
   parseInline(text, S) {
+    text = escapeHtml(text);
     // 链接：微信会过滤 <a>，转为「标题（URL）」纯文本展示
     text = text.replace(/\[(.+?)\]\((.+?)\)/g, '$1（$2）');
     text = text.replace(/\*\*(.+?)\*\*/g,

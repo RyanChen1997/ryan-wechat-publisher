@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>__GALLERY_TITLE__</title>
+<style>
+/*__GALLERY_CSS__*/
+</style>
+</head>
+<body>
+<header class="bar">
+  <span class="bar-logo">选一个排版模板</span>
+  <span class="bar-sub" id="bar-sub">—</span>
+</header>
+
+<div class="layout">
+  <aside class="rail">
+    <div id="rail"></div>
+    <p class="rail-foot" id="rail-foot"></p>
+  </aside>
+
+  <main class="stage">
+    <div class="device">
+      <div class="canvas"><div class="wx" id="wx"></div></div>
+    </div>
+    <div class="actions">
+      <span class="pick-cat" id="pick-cat">—</span>
+      <button class="btn" type="button" id="copy">复制「<span id="copy-name">—</span>」</button>
+      <p class="hint" id="hint">复制后粘贴给 AI，说「用这个模板」就行</p>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>window.__GALLERY__ = __GALLERY_PAYLOAD__;</script>
+<script>
+/*__GALLERY_JS__*/
+</script>
+</body>
+</html>

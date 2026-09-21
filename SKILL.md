@@ -1,30 +1,47 @@
 ---
 name: ryan-wechat-publisher
-description: 微信公众号文章一条龙工作流 — 从原始文章（Markdown / Word）到排版到发布草稿箱。当用户说"把这篇文章发到公众号"、"排版并发布"、"公众号一条龙"、"帮我发篇公众号文章"、"照着这篇公众号的风格排我的文章"时必须使用。涵盖：文章解析 → 标题大纲建议 → 风格选择 → 排版方案确认 → 生成 HTML → 内容一致性校验 → 微信兼容校验 → 本地预览 → 图片上传 → 创建草稿。内置多种排版预设，支持复刻任意公众号文章的排版风格。
+description: 微信公众号文章一条龙工作流 — 从原始文章（Markdown / Word）到排版到复制粘贴发布。当用户说"把这篇文章发到公众号"、"排版并发布"、"公众号一条龙"、"帮我发篇公众号文章"、"帮我的文章排版"时必须使用。涵盖：文章解析 → 结构确认 → 模板画廊选风格 → 排版方案二次确认 → 渲染与校验 → 浏览器预览器复制到公众号。内置多套排版预设。
 ---
 
 # Ryan WeChat Publisher
 
-微信公众号文章全流程工作流 skill — 从一篇原始文章（Markdown / Word）开始，经过结构化、排版、校验、预览，最终发布到公众号草稿箱。
+微信公众号文章全流程工作流 skill — 从一篇原始文章（Markdown / Word）开始，经过结构化、排版、校验、预览，最后在**浏览器预览器**里一键复制、粘贴进公众号编辑器。
 
-本 skill 是独立完整的工作流，包含从文章解析、排版、校验到发布的全部功能。排版引擎基于样式规则表 + 装饰生成函数模式，内置多套预设（含「章节独立框」能力），也支持从模板 URL 复刻任意公众号文章的排版风格。发布阶段通过微信云托管服务调用公众号 API。
+本 skill 是独立完整的工作流，包含从文章解析、排版、校验到发布的全部功能。排版引擎基于样式规则表 + 装饰生成函数模式，内置多套预设（含「章节独立框」能力）。**发布环节不需要任何服务配置**：预览器把图片内联进复制内容，微信编辑器在粘贴时自动把图转存到自己的 CDN。
 
-## 环境要求（首次使用）
+## 使用前提：依赖自检（首次使用）
 
-排版渲染引擎（`scripts/render.js` + 预设）为纯 Node 标准库实现，内容校验脚本为纯 Python 标准库，均不依赖第三方包。但以下功能需要额外依赖，首次使用前请确认已安装：
+排版渲染引擎（`scripts/render.js` + 预设）为纯 Node 标准库实现，内容校验脚本为纯 Python 标准库，**零依赖即可跑通排版与校验主链路**。只有下表功能需要第三方包 —— 首次使用（或换了机器）前先自检，缺什么装什么。
 
-| 功能 | 依赖 | 安装方式 |
-|------|------|----------|
-| Word 解析（`parse_docx.py`） | Node `mammoth`，或 Python `python-docx`（自动降级） | `npm install` 或 `pip install python-docx` |
-| 图片上传 + 草稿创建（`upload_and_publish.py`） | Python `requests` | `pip install requests` |
-| 复刻抓取/分析（`fetch_template.js`、`analyze_style.js`） | Node `cheerio`、`request-promise` | skill 目录下 `npm install` |
-| SVG 装饰图转 PNG（`svg-to-png.js`） | Node `@resvg/resvg-js` 或 `sharp`，或系统 ImageMagick | `npm install` 或安装 ImageMagick；按 resvg → sharp → ImageMagick 自动降级 |
+### 第 0 步：依赖自检
 
-> [!tip] 缺依赖时的表现
-> - `upload_and_publish.py` 缺 `requests`：启动即提示安装命令，不会裸报错
-> - 复刻脚本缺 npm 包：提示「缺少依赖模块 … 请在 skill 目录执行 npm install」
-> - SVG 转 PNG 全部渲染器缺失：报错并说明安装方式
-> - 分发时 `node_modules/` 与运行时产物（`images-uploaded.json`、`draft-result.json` 等）不随 skill 分发，接收方按上表安装后功能完整
+```bash
+cd <skill 根目录>          # 本 SKILL.md 所在目录
+node -e "['mammoth','@resvg/resvg-js','sharp'].forEach(m=>{try{require.resolve(m);console.log('OK   '+m)}catch(e){console.log('MISS '+m)}})"
+python3 --version          # 三门校验（内容一致性 / 微信兼容 / 图片存在性）依赖 Python 3
+```
+
+出现任何一个 `MISS` 就补装，然后重跑自检：
+
+```bash
+cd <skill 根目录>
+npm install --omit=dev            # Node 侧：mammoth / @resvg/resvg-js / sharp（按当前平台自动选原生二进制）
+```
+
+> [!important] 原生二进制必须在本机由 npm 安装
+> `sharp`、`@resvg/resvg-js` 通过 `optionalDependencies` 分发**平台专属**原生包（darwin-arm64 / linux-x64 / win32-x64 等）。请始终在用户本机执行 `npm install` —— 从别的机器复制来的 `node_modules/`（或打包成 zip 分发）在其它平台会直接加载失败。
+> 若本 skill 由 pi 包管理器安装（`pi install git:…`），pi 已在安装时自动执行 `npm install --omit=dev`，此时通常只需检查 Python 侧依赖。
+
+### 依赖清单
+
+| 功能 | 依赖 | 缺失时的表现 | 安装方式 |
+|------|------|--------------|----------|
+| Word 解析（`parse_docx.py`） | Node `mammoth`，或 Python `python-docx`（自动降级） | 两者都缺时报错并提示 | `npm install` 或 `python3 -m pip install python-docx` |
+| SVG 装饰图转 PNG（`svg-to-png.js`） | Node `@resvg/resvg-js` 或 `sharp`，或系统 ImageMagick | 三者都缺时报错并说明安装方式 | `npm install`，或 `brew install imagemagick` / `apt install imagemagick`；按 resvg → sharp → ImageMagick 自动降级 |
+
+- 环境基线：Node 18+、Python 3.8+（三门校验脚本只用标准库，无需 pip 安装任何包）
+- 分发说明：`node_modules/` 与运行时产物不随 skill 分发，接收方按上表自检安装后功能完整
+- 仓库中另有复刻相关的历史脚本（`scripts/clone/*`），额外需要 `cheerio`、`request-promise`；它们不在工作流内，默认不安装
 
 ## 工作目录
 
@@ -40,53 +57,45 @@ description: 微信公众号文章一条龙工作流 — 从原始文章（Markd
 01-input/source.md              原始文章
 02-structured/structured.md     确认后的结构化 md（唯一真相源）
 03-style/selected-preset.json   选定的风格信息
+04-html/studio.html             排版预览器（浏览器打开 → 预览 + 复制到公众号）
 04-html/article-body.html       发布版 HTML（data-src）
 04-html/article-preview.html    预览版 HTML
-05-validation/                  校验日志
-09-publish/                     发布产物（图片映射、最终 HTML、草稿结果）
+05-validation/                  三门校验日志（渲染时自动写入）
 ```
-复刻模式下 `03-style/clone-template/` 存放模板抓取和分析产物。
 
-## 完整工作流（9 步）
+## 完整工作流（6 步）
 
 | 步骤 | 内容 |
 |------|------|
 | 1 | 解析文章（md / word） |
-| 2 | 标题框架建议（结构不清晰时生成大纲），输出引用块格式确认 |
-| 3 | 排版风格选择（预设表格 / 复刻） |
-| 4 | 排版方案确认（风格 + 标题层级映射 + 结构） |
-| 5 | 生成 HTML |
-| 6 | 校验（内容一致性 + 微信兼容） |
-| 7 | 本地预览，确认效果 |
-| 8 | 图片上传 + 创建草稿 |
-| 9 | 完成通知 |
+| 2 | 结构确认：梳理文章层级（`#` → `1.`、`##` → `1.1`）编号发给用户；文案见 `references/confirmation-dialogs.md` |
+| 3 | 模板推荐：生成画廊页（用内置示例文章渲染 3 套推荐模板），用户点「复制「模板名」」回传 |
+| 4 | 排版方案确认：**已确定的模板 + 标题层级 + 文章结构**再核对一次；文案见 `references/confirmation-dialogs.md` 节点 3 |
+| 5 | 渲染 + 校验：一条命令产出发布版 HTML 与 studio.html，同时跑三门校验（内容一致性 / 微信兼容 / 图片存在性） |
+| 6 | 打开浏览器 studio：用户切电脑/手机、白天/夜间确认效果，点「复制到公众号」粘贴发布；文案见 `references/confirmation-dialogs.md` 节点 4 |
 
-每一步的具体操作、命令、输出格式，详见 `references/workflow-detail.md`。
+每一步的具体操作、命令、输出格式，详见 `references/workflow-detail.md`。需要用户回话的节点（第 2、3、4、6 步）发给用户的文案已全部定稿，见 `references/confirmation-dialogs.md` —— **逐字照写，不要发挥**。
 
-第 2、4、7 步需要用户确认后才能继续。
+> [!tip] 第 3 步不要用文字表格推荐模板
+> 跑 `node scripts/build-gallery.js --workdir <任务工作目录> --open` 生成画廊页：顶部是**为你推荐的 3 套**（第 1 套默认展示），下面是**按分类浏览**（标签页 = 有模板的分类 + 计数），中间手机版白天效果，底部一个「复制「模板名」」按钮。用户点完粘贴回来，拿着名称映射回预设 ID 再进第 4 步。
+> 3 套推荐**尽量来自不同分类**（脚本会在全落在同一个分类时提示），用户更容易一眼分辨风格；`--presets` 最多 3 个。
+> 画廊**固定用 skill 内置的示例文章渲染**（`assets/gallery/article.md`），不要拿用户的文章去套 —— 所有模板渲染同一篇才好对比，也不用等用户的长文和图片。
+> 没有模板的分类（当前是「动漫」「文艺」「复古」「中国风」）**不会出现在画廊里**，这是预期行为，不要跟用户解释成缺失。
 
-> [!tip] 发布前检查
-> 第 8 步（发布）开始前，必须检查 `WECHAT_PUBLISHER_URL` 环境变量。未配置时，先发送部署文档链接引导用户部署微信云托管服务，再获取用户提供的域名写入 shell 配置文件（持久化）。详细流程见 `references/workflow-detail.md` 第 8 步「前置检查」。
+> [!important] 第 1 步之前先做依赖自检
+> 首次使用（或换了机器）时，先完成上面的「第 0 步：依赖自检」并补齐缺失依赖，再进入第 1 步；缺依赖会让 Word 解析、SVG 转 PNG、三门校验等环节中途失败。
 
-## 复刻排版
+第 2、3、4、6 步需要用户回话后才能继续。
 
-当用户说"照着 XX 这篇公众号的风格排"时触发。
+> [!important] 第 5 步的校验门不要手动重写
+> `preview-studio.js` **自带校验门**，渲染完会自动跑内容一致性 / 微信兼容 / 图片存在性三门校验，日志写到 `<workdir>/05-validation/`，输出 `校验门: 3/3 通过`。任一门未通过会 `exit 1` 且**不打开浏览器** —— 先修问题、重跑同一命令，别把没校验的稿子拿给用户确认。
+> 只有需要单独复跑某一门时才手动调用 `scripts/compare_visible_text.py` / `validate_wechat_html.py` / `check_images.py`（见 `references/workflow-detail.md` 第 5 步）。
 
-> [!caution] 复刻排版需要视觉能力
-> 开始复刻前先告知用户：复刻需要分析模板的视觉风格，效果取决于模型是否有图片理解能力。复杂装饰的还原度可能有限。确认后再进入。
-
-复刻流程（7 步）：
-1. 抓取模板、归档原始图片并生成资产清单
-2. 先审查图片标题/GIF/装饰候选，再分析 CSS 和强调色规则
-3. 元素映射规划（md 元素 → 模板角色）
-4. 在已有排版方案确认中同时确认：仅本次使用，或持久化到当前引用 Skill（通常推荐持久化）
-5. 生成 cloned preset + 渲染
-6. 生成关键元素并排视觉门禁，完成 L1 整体 → L2 关键元素 → L3 细节 → L4 边界验证
-7. 通过语义内容、微信兼容和图片存在性校验
-
-不要新增 `.skillman`、`.codex` 等环境专属同步选项。选择持久化时，保存到本次实际引用的 Skill 根目录 `scripts/presets/<id>/`；选择仅本次使用时，保留在任务工作目录。
-
-详细步骤、分析方法、验证门禁、常见模式、踩坑清单，详见 `references/clone-guide.md`。
+> [!tip] 第 6 步：发布就是「复制到公众号」
+> 预览器点「复制到公众号」→ 公众号编辑器新建图文 → 粘贴（⌘V）→ 补标题/封面 → 存草稿。整篇内联样式不丢，图片会一起过去：默认把本地图片压到 1080px 后**内联 base64**（粘贴时微信编辑器把每张图抓下来转存到自己 CDN）。
+> 图床（Litterbox）**默认就是开着的**：图片在**用户点「复制到公众号」那一刻**才上传（零配置、免登录），页面弹进度条，上传完自动把内联替换成 https 链接并复制；上传失败的图保留内联 base64。预览器顶栏有「复制时传图床」开关，用户随时能关；命令行用 `--no-image-host` 可整个关掉。链接 72 小时后失效，**要提醒用户在过期前发布**。
+> 所以**不需要额外加参数**，也不需要判断该用哪种方案 —— 复制内容同时具备两条路，用户在预览器里一眼就能切。
+> 无论哪种，**都不需要云托管、不需要自建图床、不需要手动传图**，没有「API 建草稿」这条路。
 
 ## 硬约束
 
@@ -95,45 +104,75 @@ description: 微信公众号文章一条龙工作流 — 从原始文章（Markd
 - 发布版图片用 `data-src`（微信懒加载规范）
 - 不用黑名单标签：`<script>`, `<style>`, `<iframe>`, `<form>`, `<svg>`, `<ul>`, `<ol>`, `<li>` 等
 - 不用黑名单 CSS：`position: fixed/sticky`, `float`, `z-index`, `filter` 等（relative/absolute 尽量少用，优先 flex 布局）
-- **装饰图形一律转 PNG**：SVG 只作为设计源文件，输出到 HTML 必须是 PNG 图片（走图片上传流水线），公众号不支持 inline SVG 和 base64 SVG
+- **装饰图形一律转 PNG**：SVG 只作为设计源文件，输出到 HTML 必须是 PNG 图片，公众号不支持 inline SVG 和 base64 SVG
 - **列表一律用 section + 内联符号**：不要用 `<ul>/<ol>/<li>`，公众号会强制显示默认列表符号导致样式错乱
 - **夜间模式友好**：浅色背景一律写成微信 CSS 变量 `var(--weui-BG-1/2/3, <白天色>)` 形式（fallback 为白天色，本地预览不变），不用半透明白背景；高饱和强调色保留。夜间由微信 mp-darkmode 算法统一映射，深浅不一的灰阶马赛克是“浅色块过多”的信号。规则详见 `references/style-presets.md`「深色模式适配规范」
-- 正文从 `#` 一级标题开始，不额外加"文章总标题"层（草稿 title 取第一个 `#` 文本）
-- 需要用户确认的步骤（第 2、4、7 步），等用户明确答复后才继续
+- **正文不含文章标题**：草稿标题（title）单独放在 `02-structured/structured.md` 的 frontmatter `title:` 里，正文从第一个章节标题（`#`）开始 —— 不要把标题写成正文的第一个 `#`
+- 需要用户确认的步骤（第 2、4、6 步），等用户明确答复后才继续
+- **校验门未过不得进下一步**：`校验门: 3/3 通过` 才打开浏览器 studio；改了 HTML（换预设、调偏移、改结构）必须重跑渲染 + 校验
 
-## 预设包结构
+## 预设包结构（分类 → 预设 两层）
 
-每个具体预设都是 `scripts/presets/<preset-id>/` 下的独立包，入口统一为 `index.js`。与该预设绑定的 SVG、PNG、GIF、生成脚本和说明文档放在同一包内，避免所有预设共享一个全局素材目录。
+预设按分类归档：`scripts/presets/<分类 id>/<preset-id>/`。分类清单与展示顺序见 `scripts/presets/index.js` 的 `CATEGORY_ORDER`；每个分类目录下的 `index.js` 是**分类桶**（分类中文名 + 该分类的模板列表），模板与它的 SVG、PNG、GIF、生成脚本和说明文档放在同一个包里，避免所有预设共享一个全局素材目录。
 
 ```text
-scripts/presets/<preset-id>/
-├── index.js
-├── assets/       # 可选：只放不可变源素材或预渲染成品，不放运行时缓存
-├── svg/          # 可选：SVG 设计源
-├── font-policy.json # SVG 含文字时必需：字体可移植策略
-└── README.md     # 可选：复杂预设的使用说明
+scripts/presets/<分类 id>/
+├── index.js          # 分类桶：{ id, name, description, presets: [...] }
+└── <preset-id>/      # 具体预设包
+    ├── index.js
+    ├── assets/       # 可选：只放不可变源素材或预渲染成品，不放运行时缓存
+    ├── svg/          # 可选：SVG 设计源
+    ├── font-policy.json # SVG 含文字时必需：字体可移植策略
+    ├── manifest.json # 复刻模板必需：来源与还原度记录（见下）
+    └── README.md     # 可选：复杂预设的使用说明
 ```
 
-`scripts/presets/base.js` 是公共渲染引擎，`scripts/presets/index.js` 是预设注册器，两者不属于具体预设包。
+十个分类（按顺序）：**商务、简约、清新、卡通、时尚、极简、动漫、文艺、复古、中国风**。
+
+- 分类目录**必须存在**，空分类也要留目录 + 桶文件（`presets: []`）—— 画廊会自动隐藏没有模板的分类，目录先留着，以后加了模板就自动出现
+- 新增 / 移动模板 = 新建或移动包目录 + 改所属分类桶里的一行 `require`，**不用动根 `index.js`**
+- 注册器在加载时校验：分类桶 id 与目录名一致、preset 目录名与 `preset.id` 一致、分类目录下没有未注册的模板包，任一条不满足直接抛错
+- 每个预设注册时会被注入 `category` / `categoryName`，画廊、测试等下游直接读这两个字段
+- `scripts/presets/base.js` 是公共渲染引擎，`scripts/presets/index.js` 是预设注册器，两者不属于具体预设包。
+
+### `manifest.json`（复刻模板）
+
+从公众号文章复刻来的预设必须带 `manifest.json`，记录「这套模板从哪来、还原到什么程度」。
+**10 个基础键固定不变，可选键只在需要时出现**，不要各自增加口径不同的新键：
+
+| 键 | 必需 | 说明 |
+|---|---|---|
+| `preset_id` | ✅ | 与目录名、`index.js` 的 `id` 三者一致 |
+| `name` | ✅ | 模板中文名 |
+| `article_id` | ✅ | 原公众号文章 id（`mp.weixin.qq.com/s/<id>` 里那段），画廊据此配对原文 |
+| `url` / `account` / `score` | ✅ | 原文链接 / 公众号名 / 采集阶段的设计感评分（0~100） |
+| `worker` | ✅ | 复刻它的是哪个 worker 会话 |
+| `status` | ✅ | `done` 或 `failed`（失败也要留文件，避免静默丢失） |
+| `fidelity` | ✅ | `{ "L1": bool, "L2": bool, "L3": bool, "L4": bool }`，对应 clone-guide 的四级视觉门禁 |
+| `known_gaps` | ✅ | 字符串数组，逐条写清已知偏差。**不要把合规细节写成缺陷** |
+| `semantic_markup` | ❌ 可选 | **仅当该预设标记了短语级装饰时出现**：`{ decorated_nodes: string[], note: string }` |
+
+> 不写 `updated_at` 之类的冗余时间戳 —— 预设包在 git 里，修改时间由版本历史记录，自建时间戳容易失真且格式不统一。
 
 ## 资源索引
 
 | 分类 | 文件 | 作用 |
 |------|------|------|
-| 工作流 | `references/workflow-detail.md` | 9 步工作流详细操作指南 |
-| 复刻 | `references/clone-guide.md` | 复刻排版完整指南（6 步流程 + 四级门禁 + 模式速查） |
+| 工作流 | `references/workflow-detail.md` | 6 步工作流详细操作指南 |
+| 对话 | `references/confirmation-dialogs.md` | 各确认节点发给用户的固定文案规范（只锁已定稿的节点） |
 | 预设 | `references/style-presets.md` | 内置预设风格详细说明（含夜间模式适配规范） |
-| 排错 | `references/troubleshooting.md` | 常见问题、错误码、避坑要点 |
-| 渲染 | `scripts/render.js` | 渲染入口：md + preset → HTML（支持 `--output-dark-preview` 夜间预览） |
-| 夜间模拟 | `scripts/utils/dark-preview.js` | 按微信 mp-darkmode 算法生成夜间模式预览 |
+| 排错 | `references/troubleshooting.md` | 常见问题、错误码、避坑要点（含「复制粘贴带图的机制」实测表） |
+| 诊断 | `scripts/paste-probe.js` | 图片粘贴探针：一次性验证哪种图片形式能活着粘进公众号编辑器（需配 `utils/static-server.js`） |
+| 渲染 | `scripts/render.js` | 渲染入口：md + preset → HTML（脚本化批量处理用；日常走预览器） |
+| 预览器 | `scripts/preview-studio.js` | 生成 studio.html（预览 + 复制到公众号）与发布版 HTML，**并自带三门校验门**；图片默认压到 1080px 内联进复制内容，可用 `--image-host` 改成传图床走链接 |
+| 预览器 | `assets/previewer/studio.{html,css,js}` | 预览器本体（可复用，不需要每次重写）：端模式、日夜模式、复制到公众号 |
+| 画廊 | `scripts/build-gallery.js` | 生成模板推荐画廊页（3 个推荐位 + 分类浏览 + 手机版预览 + 复制模板名；空分类不显示） |
+| 画廊 | `assets/gallery/` | 画廊外壳与内置示例文章（`article.md` + `images/`），供渲染展示用 |
+| 夜间模拟 | `scripts/utils/dark-preview.js` | 按微信 mp-darkmode 算法做夜间映射（预览器右上角「夜间」开关就是它，不需要另开页面） |
+| 预设 | `scripts/presets/index.js` | 预设注册器：聚合各分类桶、注入分类信息，导出 `getPreset` / `listPresets` / `listCategories` / `getPresetDir` |
 | 引擎 | `scripts/presets/base.js` | 渲染引擎公共骨架 |
-| 校验 | `scripts/compare_visible_text.py` | 内容一致性校验 |
-| 校验 | `scripts/validate_wechat_html.py` | 微信兼容校验 |
-| 校验 | `scripts/check_images.py` | 图片存在性校验 |
-| 发布 | `scripts/upload_and_publish.py` | 图片上传 + 草稿创建（HTTP 调用云托管 API） |
-| 复刻 | `scripts/clone/fetch_template.js` | 抓取模板文章 |
-| 复刻 | `scripts/clone/asset_inventory.js` | 图片资产盘点与图片标题候选识别 |
-| 复刻 | `scripts/clone/analyze_style.js` | 样式自动分析 |
-| 复刻 | `scripts/clone/build_visual_review.js` | 生成关键元素并排视觉门禁 |
-| 复刻 | `scripts/clone/check_svg_fonts.js` | 检查 SVG 文字字体策略 |
+| 校验 | `scripts/compare_visible_text.py` | 内容一致性校验（校验门第 1 道；语义比较，装饰文本不计） |
+| 校验 | `scripts/validate_wechat_html.py` | 微信兼容校验（校验门第 2 道，含夜间模式告警） |
+| 校验 | `scripts/check_images.py` | 图片存在性校验（校验门第 3 道） |
+| 图床 | `scripts/utils/image-hosts.js` | 图床适配器（Litterbox：零配置、免登录、临时托管，默认开启）。端点与时长在这里定义，实际上传在预览器里点击时由浏览器完成 |
 | 输入 | `scripts/parse_docx.py` | Word → Markdown 解析 |

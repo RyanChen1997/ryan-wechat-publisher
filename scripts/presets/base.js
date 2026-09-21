@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-
+const { escapeHtml } = require('../utils/semantic-html');
 function renderMarkdown(md, preset, options = {}) {
   const {
     useLocalImgPath = false,
@@ -47,6 +47,8 @@ function renderMarkdown(md, preset, options = {}) {
 
   function parseInline(text) {
     if (decos.parseInline) return decos.parseInline(text, STYLES);
+    // 先转义再套标记：文章里的 <style> / <img> 这类字面文本不能被当成标签注入，否则会吞掉后面整篇内容
+    text = escapeHtml(text);
     text = text.replace(/\*\*(.+?)\*\*/g,
       `<span style="${STYLES.strong || 'font-weight: bold;'}">$1</span>`);
     text = text.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g,

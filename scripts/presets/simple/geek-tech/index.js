@@ -1,6 +1,6 @@
 const path = require('path');
-const { DecoAssetManager } = require('../../utils/svg-to-png');
-const { semanticAttributes } = require('../../utils/semantic-html');
+const { DecoAssetManager } = require('../../../utils/svg-to-png');
+const { semanticAttributes, escapeHtml } = require('../../../utils/semantic-html');
 
 const PRESET_DIR = __dirname;
 
@@ -112,6 +112,7 @@ const decorations = {
   },
 
   parseInline(text, S) {
+    text = escapeHtml(text);
     text = text.replace(/\*\*(.+?)\*\*/g,
       `<span style="${S.strong}">$1</span>`);
     text = text.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g,

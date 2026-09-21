@@ -1,27 +1,5 @@
 # 常见问题与避坑指南
 
-## 发布 API 常见错误码
-
-| errcode | 含义 | 解决方法 |
-|---------|------|---------|
-| 40164 | invalid ip | host 直连被拒绝。必须通过云托管服务调用，确认 WECHAT_PUBLISHER_URL 是云托管公网域名 |
-| 45001 | media size out | 图片太大，单图 ≤ 10MB |
-| 45004 | description too long | digest 超过 120 字符，截断或缩短 |
-| 45009 | daily quota exceeded | 当日 API 调用配额用完了，明天再试 |
-| 48001 | api unauthorized | 云托管环境是小程序的不是公众号的，去控制台确认云托管环境身份；或者微信令牌权限没配 |
-
-## 连接错误
-
-如果调用时出现 `ConnectionError`、`Connection refused`、timeout 或 HTTP 5xx：
-
-1. **先自动重试探测**：微信云托管冷启动/短暂抖动很常见，先主动探测服务是否恢复
-   - 间隔 10 秒请求一次 `${WECHAT_PUBLISHER_URL}/health`
-   - 最多重试 5 次（约 50 秒）
-   - 任一返回 200 即视为恢复，立即继续发布流程
-2. 5 次都失败，再提示用户 `WECHAT_PUBLISHER_URL` 可能失效了
-3. 让用户去微信云托管控制台确认公网 URL 是否有变化
-4. 用户提供新 URL 后，帮用户重新 `export WECHAT_PUBLISHER_URL=<new-url>`
-
 ## 排版常见问题
 
 ### 段落间距太宽 / 太窄
@@ -54,11 +32,57 @@
 
 公众号不支持 inline SVG 和 base64 SVG 图片，会被过滤或不渲染。
 
-**正确做法**：SVG 转 PNG，作为普通图片通过 `data-src` 走上传流水线。
+**正确做法**：SVG 转 PNG，作为普通图片通过 `data-src` 输出（复制到公众号时预览器会把它内联进复制内容，粘贴时微信自动转存）。
 - 工具：`scripts/utils/svg-to-png.js` 中的 `DecoAssetManager`
 - 渲染：`decoAssets.get(svgString, name, width)` 拿到图片路径
 - 缓存：运行时缓存放临时目录，最终 PNG 放 `--asset-output-dir`，不要写回 preset 的 `assets/`
 - 详见 `references/clone-guide.md` 「装饰图实现规范」
+
+### 装饰图写在 CSS background-image 里（支持，但有两类载体）
+
+图片在公众号 HTML 里有**两种引用载体**，两边都要能被扫到并替换：
+
+| 载体 | 写法 | 典型用途 |
+|---|---|---|
+| `<img>` | `<img data-src="assets/deco.png" src="assets/deco.png">` | 独立成块的装饰图、图案边、大分隔图 |
+| CSS | `style="background-image:url('assets/deco.png')"` | 标题背景条、徽章底图、色块纹理（文字叠在图上） |
+
+**曾经踩过的坑**：早期只扫 `<img src|data-src>`，CSS 里的背景装饰图既不会被内联，
+也不会被替换 —— 本地预览正常，**粘贴/发布后裂图**。
+
+**现在已修复**，统一由 `scripts/utils/image-refs.js` 负责收集与替换，覆盖：
+
+- `<img src>` / `<img data-src>`（双引号、单引号都支持）
+- CSS `url('...')` / `url("...")` / `url(...)`，包括 `style` 属性里被转义成 `&quot;` / `&#39;` 的写法
+
+链路两端都已接入：
+
+- 内联：`scripts/preview-studio.js` —— `inspectImages()` 统计 + `inlineLocalImages()` 内联成 base64
+- 自检：`validate_wechat_html.py` 会分别提示 `<img>` 与 `background-image` 两类本地引用
+
+**自己写代码时不要另外写只扫 `<img>` 的正则**，直接复用 `image-refs.js`。
+
+### 夜间预览里图片全挂 / 链接被写成 `https: //…`
+
+夜间模式模拟器（`scripts/utils/dark-preview.js` 的 `simulateDark`）会重写每个元素的 `style` 属性。
+历史上它用 `lastIndexOf` 找 `style` 的结束引号，并且用 `split(';')` 切 CSS 声明 —— 两者在真实微信 HTML 上都会出错：
+
+| 编号 | 真实写法 | 错误后果 |
+|---|---|---|
+| A | `style="… font-family: "PingFang SC", system-ui"`（未转义内嵌引号） | 取“下一个引号”会在 `font-family: ` 处截断，后面的声明全丢 |
+| B | `<img style="" src="https://mmbiz…">`（style 不是最后一个属性） | 取 `lastIndexOf` 会把 `src` 一起吞进 style 值 |
+| C | `style="background-image: url(&quot;https://…&quot;)"` | `&quot;` 自带分号，`split(';')` 会把 url 从中间切开 |
+
+三种写法最后都会归到同一个症状：URL 被重组成 `https: //mmbiz…`（多一个空格），**夜间预览里图片全部裂掉**。
+30 篇真实文章实测：旧实现把 923 个正常链接弄坏了 1172 处（只剩 7 个完好）。
+
+**正确做法**（已修复）：
+
+1. `extractStyleAttr` 用一个扫描器判引号是否真的是属性结束引号 —— 只有后面紧接「标签结尾」或「下一个属性（空白+属性名+=）」时才算，否则继续往后找
+2. `parseStyle` 切分前先把 HTML 实体（`&quot;` `&amp;` `&#39;` …）保护成占位符，切完再还原
+
+**回归保护**：`scripts/test_presets.js` 里有 `dark-preview 属性解析回归`（5 个 case 覆盖 A/B/C）。
+改 `dark-preview.js` 后必须跑 `npm test`。
 
 ### 列表圆点样式错乱（变成逗号/两个点）
 
@@ -109,14 +133,15 @@ base.js 的 `renderMarkdown` 函数每次调用时 `h1Counter = 0` 会重置，�
 
 ### 发布前怎么检查夜间效果
 
-本地渲染时加参数生成夜间预览页，用浏览器打开检查：
+**首选：在排版预览器里切「夜间」**（`04-html/studio.html` 右上角），不用另开页面 —— 预览器的夜间模式就是这个算法渲染的。
 
-```
-node scripts/render.js --md <文章.md> --preset <预设ID> \
-  --output-preview <预览.html> --output-dark-preview <夜间预览.html>
+只有在单独调预设、手上没有预览器时，才用离线方式生成一张夜间预览页：
+
+```bash
+node scripts/utils/dark-preview.js <预览.html> [夜间预览.html]
 ```
 
-`scripts/utils/dark-preview.js` 按官方 mp-darkmode 算法（背景取反/中灰钳制、文字对比度调整、`--weui-*` 变量解析）模拟夜间映射，与真机效果基本一致。
+该脚本按官方 mp-darkmode 算法（背景取反/中灰钳制、文字对比度调整、`--weui-*` 变量解析）模拟夜间映射，与真机效果基本一致。
 
 ### 校验器夜间告警
 
@@ -154,9 +179,51 @@ node scripts/render.js --md <文章.md> --preset <预设ID> \
 宏观特征对风格辨识度的影响远大于细节。
 
 ## 其他避坑要点
+1. **外部图片必须上传到微信**：非微信域名的图片在公众号里会被过滤成空白（**例外**：走「复制粘贴」路线时微信编辑器会自己抓图转存，见下文）
+2. **不要用 position: fixed**：公众号内会出问题
+3. **不要用 `<style>` 标签或 class**：公众号会过滤，所有样式必须是内联 style
 
-1. **digest ≤ 120 字符**：否则 `errcode 45004`
-2. **云托管环境必须是公众号身份**：小程序云托管会报 `48001 api unauthorized`
-3. **外部图片必须上传到微信**：非微信域名的图片在公众号里会被过滤成空白
-4. **不要用 position: fixed**：公众号内会出问题
-5. **不要用 `<style>` 标签或 class**：公众号会过滤，所有样式必须是内联 style
+---
+
+## 复制粘贴带图的机制（实测结论）
+
+复制内容里的图片有**两种走法**，微信最终都会把它转存到自己的 CDN（`mmbiz.qpic.cn`）：
+
+| 走法 | 参数 | 剪贴板里的形式 | 代价 |
+|------|------|----------------|------|
+| 内联 base64（默认） | 无 | `data:image/...;base64,...` | 体积胀 ~33%，大图/动图可能粘贴失败 |
+| 传图床（临时托管） | `--image-host litterbox` | `https://litter.catbox.moe/xxx.png` | 依赖外部服务，链接最长 72h 后失效 |
+
+图床方案**默认开启**（预览器顶栏「复制时传图床」开关默认勾选，关掉就纯内联；命令行 `--no-image-host` 可整个关掉），上传发生在**用户点「复制到公众号」那一刻**（浏览器直传，Litterbox 的上传接口带 `access-control-allow-origin: *`，`multipart/form-data` 属 CORS 安全类型、不触发预检，实测可用）；页面会弹进度条，传完把内联替换成链接再写剪贴板，失败的图保留内联 base64。
+
+机制：微信编辑器收到粘贴的富文本后，在浏览器里逐个处理 `<img>`，把能拿到字节的图片上传到微信自己的图床，然后把地址换成 `mmbiz.qpic.cn`。所以能不能带图只取决于一件事：**编辑器能不能在浏览器里拿到这张图的字节**。
+
+实测过的形式（`scripts/paste-probe.js` 可以重现前四种）：
+
+| 形式 | 能否带图 | 原因 |
+|------|---------|------|
+| `data:` base64 内联 | ✅ | 字节就在 HTML 里，无需网络 |
+| `http://127.0.0.1:PORT/x.png` | ✅ | 回环地址被浏览器视为「潜在可信源」，不受混合内容拦截；服务器要带 `Access-Control-Allow-Origin: *` |
+| `https://` 公网图片 | ✅ | 正常抓取（有防盗链/需鉴权的图会失败） |
+| `https://litter.catbox.moe/...`（Litterbox） | ✅ | 匿名托管、无鉴权，响应带 `access-control-allow-origin: *`、无防盗链（实测） |
+| `file:///...` 本地路径 | ❌ | https 页面不允许读本地文件 |
+| `http://` 公网地址（非回环） | ❌ | 混合内容拦截 |
+
+### 粘贴时报「图片粘贴失败」怎么查
+
+按顺序排除：
+
+1. **看失败的是哪张、什么形式** —— 在草稿里右键失败的图 → 检查元素，看 `src`：
+   - `data:image/...` → 微信没吃下这张图（体积/格式问题）
+   - `assets/...` 本地路径 → 内联漏了（属于 bug，报给维护者）
+   - 标签整个没了 → 被微信清洗规则删掉
+2. **看体积** —— 预览器侧栏「图片」卡片会列出内联张数与总体积；控制台在单张内联后 > 300 KB 时会提示改用图床
+3. **换图床试一次** —— 确认预览器顶栏「复制时传图床」是勾选状态（默认勾选），再点「复制到公众号」（上传发生在点击的时候）：如果换成 https 链接后就不报错，说明失败原因是 base64 体积/解析；如果**照样报错**，说明微信本身吃不下这张图（典型：大体积动图），只能改图 —— 实测 `top-art-1.gif` 678 KB → 静态首帧 PNG 只有 16 KB
+
+> [!warning] 用 Litterbox 的两个前提
+> 1. **链接 72 小时后失效**（服务上限），必须在过期前点发布；微信是发布时转存到自己的服务器，过期后草稿里的图会裂
+> 2. 图的字节会经第三方服务中转（公开可访问），敏感图不要用；不想用第三方就保持默认的内联 base64
+
+> [!warning] 「能显示」不等于「已转存」
+> 在编辑器里看到图片，有可能只是因为你自己能看到那个地址（尤其是 `127.0.0.1` 或本地文件），换台设备就裂了。
+> 验证方法：在编辑器里右键图片 → 复制图片地址/检查元素，**地址是 `mmbiz.qpic.cn` 才算真的进了微信**；或存成草稿后把图片来源断掉（关服务/换机器）重新打开草稿看图还在不在。

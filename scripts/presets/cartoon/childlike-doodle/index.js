@@ -1,9 +1,10 @@
+const { escapeHtml } = require('../../../utils/semantic-html');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
 const TEMPLATE_DIR = __dirname;
-const SKILL_ROOT = path.resolve(TEMPLATE_DIR, '../../..');
+const SKILL_ROOT = path.resolve(TEMPLATE_DIR, '../../../..');
 const { DecoAssetManager } = require(path.join(SKILL_ROOT, 'scripts/utils/svg-to-png'));
 const { semanticAttributes } = require(path.join(SKILL_ROOT, 'scripts/utils/semantic-html'));
 
@@ -175,6 +176,7 @@ const decorations = {
   },
 
   parseInline(text, S) {
+    text = escapeHtml(text);
     text = text.replace(/\[(.+?)\]\((.+?)\)/g, '$1（$2）');
     text = text.replace(/\*\*(.+?)\*\*/g, (_, content) => {
       const color = HIGHLIGHT_PALETTE[highlightIndex % HIGHLIGHT_PALETTE.length];

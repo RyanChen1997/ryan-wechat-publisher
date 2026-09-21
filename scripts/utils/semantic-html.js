@@ -21,4 +21,11 @@ function semanticAttributes(text, role) {
   return `data-semantic-role="${escapeHtmlAttribute(role)}" data-semantic-text="${escapeHtmlAttribute(stripInlineMarkdown(text))}"`;
 }
 
-module.exports = { stripInlineMarkdown, escapeHtmlAttribute, semanticAttributes };
+function escapeHtml(text) {
+  return String(text || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+module.exports = { stripInlineMarkdown, escapeHtmlAttribute, escapeHtml, semanticAttributes };

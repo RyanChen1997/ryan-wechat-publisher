@@ -2,7 +2,35 @@ const fs = require('fs');
 const path = require('path');
 const { renderMarkdown } = require('./presets/base');
 const { getPreset } = require('./presets/index');
-const { simulateDark } = require('./utils/dark-preview');
+const { buildPreviewPage } = require('./utils/preview-page');
+
+/**
+ * 渲染一篇文章（发布版 + 预览版）。
+ * 供 render.js 与 preview-studio.js 共用，避免两处各写一份渲染参数。
+ */
+function renderArticle({ mdPath, preset, assetDirs = [], headingOffset = 0, assetOutputDir = null, assetUrlPrefix = '' }) {
+  const md = fs.readFileSync(mdPath, 'utf-8');
+
+  const absAssetDirs = assetDirs.map(d => path.resolve(d));
+  const mdDir = path.dirname(path.resolve(mdPath));
+  if (!absAssetDirs.includes(mdDir)) absAssetDirs.push(mdDir);
+
+  const generatedAssetDir = path.resolve(assetOutputDir || path.join(mdDir, 'assets'));
+  fs.mkdirSync(generatedAssetDir, { recursive: true });
+
+  const shared = {
+    assetDirs: absAssetDirs,
+    headingOffset,
+    assetOutputDir: generatedAssetDir,
+    assetUrlPrefix,
+  };
+
+  return {
+    publishHtml: renderMarkdown(md, preset, { ...shared, useLocalImgPath: false }),
+    previewHtml: renderMarkdown(md, preset, { ...shared, useLocalImgPath: true }),
+    generatedAssetDir,
+  };
+}
 
 function main() {
   const args = process.argv.slice(2);
@@ -10,7 +38,6 @@ function main() {
   let presetId = null;
   let outputBody = null;
   let outputPreview = null;
-  let outputDarkPreview = null;
   let assetDirs = [];
   let assetOutputDir = null;
   let assetUrlPrefix = '';
@@ -23,13 +50,21 @@ function main() {
       case '--preset': presetId = args[++i]; break;
       case '--output-body': outputBody = args[++i]; break;
       case '--output-preview': outputPreview = args[++i]; break;
-      case '--output-dark-preview': outputDarkPreview = args[++i]; break;
+      case '--output-dark-preview':
+        console.error('render.js 不再输出单独的夜间预览页。');
+        console.error('要看夜间效果：预览器（preview-studio.js）右上角切「夜间」，或 node scripts/utils/dark-preview.js <预览.html>');
+        process.exit(1);
+        break;
       case '--asset-dir': assetDirs.push(args[++i]); break;
       case '--asset-output-dir': assetOutputDir = args[++i]; break;
       case '--asset-url-prefix': assetUrlPrefix = args[++i]; break;
       case '--title': title = args[++i]; break;
       case '--heading-offset': headingOffset = parseInt(args[++i]) || 0; break;
       default:
+        if (args[i].startsWith('--')) {
+          console.error(`未知参数: ${args[i]}`);
+          process.exit(1);
+        }
         if (!mdPath) mdPath = args[i];
         else if (!presetId) presetId = args[i];
     }
@@ -41,7 +76,6 @@ function main() {
     console.error('选项:');
     console.error('  --output-body <路径>    发布版 HTML 输出路径');
     console.error('  --output-preview <路径> 预览版 HTML 输出路径');
-  console.error('  --output-dark-preview <路径> 夜间模式预览 HTML 输出路径（模拟微信 mp-darkmode 算法）');
     console.error('  --asset-dir <目录>      图片搜索目录（可多次指定）');
     console.error('  --asset-output-dir <目录> 动态生成图片的输出目录（与源素材目录分离）');
     console.error('  --asset-url-prefix <前缀> 发布版动态图片 URL 前缀，如 assets');
@@ -64,27 +98,14 @@ function main() {
     process.exit(1);
   }
 
-  const md = fs.readFileSync(mdPath, 'utf-8');
-
-  const absAssetDirs = assetDirs.map(d => path.resolve(d));
-  const mdDir = path.dirname(path.resolve(mdPath));
-  if (!absAssetDirs.includes(mdDir)) absAssetDirs.push(mdDir);
   const bodyPath = outputBody || path.join(path.dirname(mdPath), 'article-body.html');
   const previewPath = outputPreview || path.join(path.dirname(mdPath), 'article-preview.html');
   const generatedAssetDir = path.resolve(assetOutputDir || path.join(path.dirname(previewPath), 'assets'));
-  fs.mkdirSync(generatedAssetDir, { recursive: true });
 
-  const publishHtml = renderMarkdown(md, preset, {
-    useLocalImgPath: false,
-    assetDirs: absAssetDirs,
-    headingOffset,
-    assetOutputDir: generatedAssetDir,
-    assetUrlPrefix,
-  });
-
-  const previewHtml = renderMarkdown(md, preset, {
-    useLocalImgPath: true,
-    assetDirs: absAssetDirs,
+  const { publishHtml, previewHtml } = renderArticle({
+    mdPath,
+    preset,
+    assetDirs,
     headingOffset,
     assetOutputDir: generatedAssetDir,
     assetUrlPrefix,
@@ -93,58 +114,12 @@ function main() {
   fs.writeFileSync(bodyPath, publishHtml);
   console.log('发布版 HTML:', bodyPath, '(' + publishHtml.length + ' bytes)');
 
-  const fullPreview = `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${title}</title>
-<style>
-  body {
-    max-width: 680px;
-    margin: 20px auto;
-    padding: 0 16px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
-    background: #fff;
-  }
-  img { max-width: 100%; height: auto; }
-</style>
-</head>
-<body>
-${previewHtml}
-</body>
-</html>`;
+  const fullPreview = buildPreviewPage({ title, html: previewHtml });
 
   fs.writeFileSync(previewPath, fullPreview);
   console.log('预览版 HTML:', previewPath, '(' + fullPreview.length + ' bytes)');
-
-  if (outputDarkPreview) {
-    const darkHtml = simulateDark(previewHtml);
-    const darkPreview = `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${title}（夜间模式预览）</title>
-<style>
-  body {
-    max-width: 680px;
-    margin: 20px auto;
-    padding: 0 16px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
-    background: #191919;
-    color: #a3a3a3;
-  }
-  img { max-width: 100%; height: auto; }
-</style>
-</head>
-<body>
-${darkHtml}
-</body>
-</html>`;
-    fs.writeFileSync(outputDarkPreview, darkPreview);
-    console.log('夜间预览版 HTML:', outputDarkPreview, '(' + darkPreview.length + ' bytes)');
-  }
 }
 
-main();
+if (require.main === module) main();
+
+module.exports = { renderArticle };
