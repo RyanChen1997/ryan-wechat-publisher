@@ -15,7 +15,7 @@
 |---|--------|-------------|------|----------|
 | 0 | 依赖自检（首次 / 换机器） | `node -e "['mammoth','@resvg/resvg-js','sharp'].forEach(...)"` + `python3 --version`，缺则 `npm install --omit=dev` | — | 否 |
 | 1 | 解析文章（md / docx） | `python3 scripts/parse_docx.py <in.docx> 01-input/source.md --extract-images 01-input/images/`；md 直接读并补 frontmatter `title:` | `01-input/source.md` | 否 |
-| 2 | **结构确认** | 梳理 `#` → `1.`、`##` → `1.1` 的层级，按 `confirmation-dialogs.md` 节点 1 发消息 | `02-structured/structured.md`（**唯一真相源**） | ✅ |
+| 2 | **结构确认** | 梳理 `#` → `1.`、`##` → `1.1` 的层级；同时做**样式丰富化 + 图片注释**（只写进 structured.md，消息不变，见 workflow-detail 第 2 步），按 `confirmation-dialogs.md` 节点 1 发消息 | `02-structured/structured.md`（**唯一真相源**） | ✅ |
 | 3 | **打开模板的画廊**（选风格） | `node scripts/build-gallery.js --presets <最推荐>,<备选1>,<备选2> --workdir <工作目录> --open` | `<workdir>/03-style/gallery.html` | ✅ |
 | 4 | **排版方案确认** | 把「已定模板 + 标题层级映射 + 文章结构」摆一起核对，按节点 3 发消息 | `03-style/selected-preset.json`（preset id + heading-offset） | ✅ |
 | 5 | 渲染 + 校验 | `node scripts/preview-studio.js --md 02-structured/structured.md --preset <id> --heading-offset <N> --workdir <工作目录> --title "标题" --asset-dir 02-structured/ --asset-dir 01-input/images` | `04-html/{studio,article-body,article-preview}.html` + `05-validation/*.log` | 否（校验门自带） |
