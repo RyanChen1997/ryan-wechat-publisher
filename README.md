@@ -1,15 +1,28 @@
-# Ryan WeChat Publisher
+<div align="center">
+  <h1>Ryan WeChat Publisher</h1>
+  <p><strong>公众号文章排版发布助手</strong></p>
+  <p>把一篇普通的 Markdown / Word 文章，变成一篇好看的公众号文章：先在一个可视化预览器里确认效果，再一键复制粘贴到公众号编辑器。</p>
+</div>
 
-**公众号文章排版发布助手** —— 把一篇普通的 Markdown / Word 文章，变成一篇好看的公众号文章：先在一个可视化预览器里确认效果，再一键复制粘贴到公众号编辑器。
+<p align="center">
+  <img src="assets/readme/feature-banner.png" alt="公众号文章排版 Skill 功能展示：模板预览、内容编辑、多端与日夜模式" width="100%">
+</p>
 
----
+<p align="center"><strong>多套排版模板 · 所见即所得预览 · 编辑文字与配图 · 多端 / 日夜模式 · 一键复制发布</strong></p>
 
-## 🖼️ 排版效果预览
+## 免费版与高级版
 
-| | | |
-|---|---|---|
-| ![](assets/previews/thumbs/blue-dot-notes.png) | ![](assets/previews/thumbs/purple-badge.png) | ![](assets/previews/thumbs/elegant-minimal.png) |
-| ![](assets/previews/thumbs/vibrant-badge.png) | ![](assets/previews/thumbs/geek-tech.png) | ![](assets/previews/thumbs/wechat-blue-yellow.png) |
+| 功能 | 免费版 | 高级版 |
+|------|--------|--------|
+| 模板数量 | 6 款基础模板 | 108 款模板 |
+| 自动排版与复制发布 | 支持 | 支持 |
+| 电脑 / 手机、白天 / 夜间预览 | 支持 | 支持 |
+| 预览中实时切换模板 | — | 支持 |
+| 预览中修改文字、替换图片 | — | 支持 |
+
+> 💡 **Tips：** 高级版售价 89 元（永久），一次购买即可永久使用，并享有定期更新和专属交流群。
+
+<p align="center"><a href="https://wx.airyanchen.cc/pricing"><strong>获取高级版 / 了解更多 →</strong></a></p>
 
 ---
 
