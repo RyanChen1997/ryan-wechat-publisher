@@ -30,6 +30,8 @@
 
 ### 1. 内置多套排版模板，一键套用
 
+<p align="center"><a href="https://wx.airyanchen.cc/templates"><strong>查看所有模板 →</strong></a></p>
+
 不用懂任何代码，选一套风格就能排：
 
 | 预设 | 风格 |
